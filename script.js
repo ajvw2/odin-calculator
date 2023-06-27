@@ -34,11 +34,12 @@ function getSolution() {
       } else if (operator === "subtraction") {
         valueStack.push(-1);
 
-        if (i >= 1) operatorStack.push("addition");
+        if (i >= 1 && operation[i - 1].classList.contains("num")) {
+          operatorStack.push("addition");
+        }
         operatorStack.push("multiplication");
       } else if (operator === "closing-bracket") {
         evaluatePart();
-        console.log("bracket done");
       } else {
         operatorStack.push(operator);
       }
@@ -63,8 +64,10 @@ function evaluatePart() {
   const singleArgumentOps = ["sqrt", "log", "ln"];
 
   while (valueStack.length > 1 || operatorStack.length > 0) {
-    console.log(valueStack);
-    console.log(operatorStack);
+    // console.log("VALUE STACK");
+    // console.log(valueStack);
+    // console.log("OPERATOR STACK");
+    // console.log(operatorStack);
 
     operator = operatorStack.pop();
     if (operator === "opening-bracket" || operator === undefined) {
@@ -88,7 +91,8 @@ function evaluatePart() {
       if (
         !lowOrderOps.includes(nextOperator) &&
         !midOrderOps.includes(nextOperator) &&
-        nextOperator !== "opening-bracket"
+        nextOperator !== "opening-bracket" &&
+        !singleArgumentOps.includes(nextOperator)
       ) {
         c = valueStack.pop();
         valueStack.push(calculate(nextOperator, c, b));
@@ -166,35 +170,30 @@ function factorial(n) {
 
 function setNumberButtonDisabledTo(setting, subset = "all") {
   // Subset
-  const specialNumbers = ["pi", "e", "answer"];
-  const dotAndSpecialNumbers = ["dot", "pi", "e", "answer"];
+  const set1 = ["pi", "e", "answer"];
+  const set2 = [...set1];
+  set2.push("dot");
 
-  switch (subset) {
-    case "all":
-      numberButtons.forEach((numberButton) => {
+  numberButtons.forEach((numberButton) => {
+    let setterCondition;
+    switch (subset) {
+      case "all":
         numberButton.disabled = setting;
-      });
-      break;
-    case "special-numbers":
-      numberButtons.forEach((numberButton) => {
-        if (specialNumbers.includes(numberButton.getAttribute("id"))) {
-          numberButton.disabled = setting;
-        }
-      });
-      break;
-    case "dot-and-special-numbers":
-      numberButtons.forEach((numberButton) => {
-        if (dotAndSpecialNumbers.includes(numberButton.getAttribute("id"))) {
-          numberButton.disabled = setting;
-        }
-      });
-      break;
-  }
+        break;
+      case "special-numbers":
+        setterCondition = set1.includes(numberButton.getAttribute("id"));
+        numberButton.disabled = setterCondition ? setting : !setting;
+        break;
+      case "dot-and-special-numbers":
+        setterCondition = set2.includes(numberButton.getAttribute("id"));
+        numberButton.disabled = setterCondition ? setting : !setting;
+        break;
+    }
+  });
 }
 
 function setOperatorButtonDisabledTo(setting, subset = "all") {
-  // Subsets
-  const afterOperators = [
+  const set1 = [
     "factorial",
     "percentage",
     "power",
@@ -204,62 +203,30 @@ function setOperatorButtonDisabledTo(setting, subset = "all") {
     "closing-bracket",
     "equals",
   ];
+  const set2 = [...set1];
+  set2.push("subtraction");
 
-  const afterIncludingMinusOperators = [
-    "factorial",
-    "percentage",
-    "power",
-    "division",
-    "multiplication",
-    "addition",
-    "subtraction",
-    "closing-bracket",
-    "equals",
-  ];
-
-  switch (subset) {
-    case "all":
-      operatorButtons.forEach((operatorButton) => {
+  operatorButtons.forEach((operatorButton) => {
+    let setterCondition;
+    switch (subset) {
+      case "all":
         operatorButton.disabled = setting;
-      });
-      break;
-    case "all-except-opening-bracket":
-      operatorButtons.forEach((operatorButton) => {
-        if (operatorButton.getAttribute("id") !== "opening-bracket") {
-          operatorButton.disabled = setting;
-        } else {
-          operatorButton.disabled = !setting;
-        }
-      });
-      break;
-    case "after":
-      operatorButtons.forEach((operatorButton) => {
-        if (afterOperators.includes(operatorButton.getAttribute("id"))) {
-          operatorButton.disabled = setting;
-        } else {
-          operatorButton.disabled = !setting;
-        }
-      });
-      break;
-    case "after-including-minus":
-      operatorButtons.forEach((operatorButton) => {
-        if (
-          afterIncludingMinusOperators.includes(
-            operatorButton.getAttribute("id")
-          )
-        ) {
-          operatorButton.disabled = setting;
-        } else {
-          operatorButton.disabled = !setting;
-        }
-      });
-      break;
-  }
+        break;
+      case "after":
+        setterCondition = set1.includes(operatorButton.getAttribute("id"));
+        operatorButton.disabled = setterCondition ? setting : !setting;
+        break;
+      case "after-including-minus":
+        setterCondition = set2.includes(operatorButton.getAttribute("id"));
+        operatorButton.disabled = setterCondition ? setting : !setting;
+        break;
+    }
+  });
 
   if (bracketDepth === 0) {
     operatorButtons[7].disabled = true; // Disable closing bracket button
   } else {
-    operatorButtons[12].disabled = true; // Disable equals button
+    operatorButtons[11].disabled = true; // Disable equals button
   }
 }
 
@@ -303,47 +270,22 @@ function addNumberToCurrentDisplay(buttonID) {
   switch (buttonID) {
     case "pi":
       newNumber.innerHTML += "&pi;";
-      setNumberButtonDisabledTo(true);
       break;
     case "e":
       newNumber.innerHTML += "e";
-      setNumberButtonDisabledTo(true);
       break;
     case "dot":
       newNumber.innerHTML += ".";
-      setNumberButtonDisabledTo(true, (subset = "dot-and-special-numbers"));
-      setOperatorButtonDisabledTo(true, (subset = "all"));
-      activeElement.insertBefore(
-        newNumber,
-        activeElement.querySelector(".closing-bracket.anticipating")
-      );
-      return;
+      break;
     case "answer":
       newNumber.innerHTML += "";
-      setNumberButtonDisabledTo(true);
       break;
     default:
       newNumber.innerHTML += `${buttonID}`;
-      setNumberButtonDisabledTo(true, (subset = "special-numbers"));
   }
 
-  setOperatorButtonDisabledTo(false, (subset = "after-including-minus"));
   activeElement.insertBefore(
     newNumber,
-    activeElement.querySelector(".closing-bracket.anticipating")
-  );
-}
-
-function addNewAnticipatingClosingBracket() {
-  const activeElement = getActiveElement();
-
-  const newClosingBracket = document.createElement("div");
-  newClosingBracket.classList.add("op");
-  newClosingBracket.classList.add("closing-bracket");
-  newClosingBracket.classList.add("anticipating");
-  newClosingBracket.innerHTML = ")";
-  activeElement.insertBefore(
-    newClosingBracket,
     activeElement.querySelector(".closing-bracket.anticipating")
   );
 }
@@ -357,22 +299,10 @@ function addOperatorToCurrentDisplay(buttonID) {
   switch (buttonID) {
     case "factorial":
       newOperator.innerHTML = "!";
-      setNumberButtonDisabledTo(true);
-      setOperatorButtonDisabledTo(false, (subset = "after"));
-      activeElement.insertBefore(
-        newOperator,
-        activeElement.querySelector(".closing-bracket.anticipating")
-      );
-      return;
+      break;
     case "percentage":
       newOperator.innerHTML = "%";
-      setNumberButtonDisabledTo(true);
-      setOperatorButtonDisabledTo(false, (subset = "after"));
-      activeElement.insertBefore(
-        newOperator,
-        activeElement.querySelector(".closing-bracket.anticipating")
-      );
-      return;
+      break;
     case "power":
       newOperator.classList.add("active");
       break;
@@ -402,8 +332,6 @@ function addOperatorToCurrentDisplay(buttonID) {
       );
       firstClosingBracket.classList.remove("anticipating");
       bracketDepth--;
-      setNumberButtonDisabledTo(true);
-      setOperatorButtonDisabledTo(false, (subset = "after"));
       return;
     case "division":
       newOperator.innerHTML = " &div; ";
@@ -424,8 +352,10 @@ function addOperatorToCurrentDisplay(buttonID) {
     case "equals":
       const solution = getSolution();
       newOperator.innerHTML = ` = `;
+
       const solutionDiv = document.createElement("div");
       solutionDiv.classList.add("num");
+      solutionDiv.classList.add("solution");
       solutionDiv.textContent = `${solution}`;
 
       currentDisplay.appendChild(newOperator);
@@ -440,32 +370,93 @@ function addOperatorToCurrentDisplay(buttonID) {
       currentDisplay.innerHTML = "";
       const solutionDivClone = solutionDiv.cloneNode(true);
       currentDisplay.appendChild(solutionDivClone);
-      setNumberButtonDisabledTo(true);
-      setOperatorButtonDisabledTo(false, (subset = "after-including-minus"));
       return;
   }
 
-  setNumberButtonDisabledTo(false);
-  setOperatorButtonDisabledTo(true, (subset = "after"));
   activeElement.insertBefore(
     newOperator,
     activeElement.querySelector(".closing-bracket.anticipating")
   );
 }
 
-let bracketDepth = 0;
+function addNewAnticipatingClosingBracket() {
+  const activeElement = getActiveElement();
+
+  const newClosingBracket = document.createElement("div");
+  newClosingBracket.classList.add("op");
+  newClosingBracket.classList.add("closing-bracket");
+  newClosingBracket.classList.add("anticipating");
+  newClosingBracket.innerHTML = ")";
+  activeElement.insertBefore(
+    newClosingBracket,
+    activeElement.querySelector(".closing-bracket.anticipating")
+  );
+}
+
+function setButtons() {
+  if (!currentDisplay.children.length > 0) {
+    setOperatorButtonDisabledTo(true, (subset = "after"));
+    setNumberButtonDisabledTo(false);
+    return;
+  }
+
+  let last;
+  const length = currentDisplay.children.length;
+  for (let i = 0; i < length; i++) {
+    let next = currentDisplay.children[i + 1];
+    if (i === length - 1 || next.classList.contains("anticipating")) {
+      last = currentDisplay.children[i];
+      break;
+    }
+  }
+
+  if (
+    last.classList.contains("pi") ||
+    last.classList.contains("e") ||
+    last.classList.contains("answer")
+  ) {
+    setNumberButtonDisabledTo(true);
+    setOperatorButtonDisabledTo(false, (subset = "after-including-minus"));
+  } else if (last.classList.contains("dot")) {
+    setNumberButtonDisabledTo(true, (subset = "dot-and-special-numbers"));
+    setOperatorButtonDisabledTo(true);
+  } else if (last.classList.contains("num")) {
+    if (last.classList.contains("solution")) {
+      setNumberButtonDisabledTo(true);
+      setOperatorButtonDisabledTo(false, (subset = "after-including-minus"));
+    } else {
+      setNumberButtonDisabledTo(true, (subset = "special-numbers"));
+      setOperatorButtonDisabledTo(false, (subset = "after-including-minus"));
+    }
+  } else if (
+    last.classList.contains("factorial") ||
+    last.classList.contains("percentage") ||
+    last.classList.contains("closing-bracket")
+  ) {
+    setNumberButtonDisabledTo(true);
+    setOperatorButtonDisabledTo(false, (subset = "after-including-minus"));
+  } else if (last.classList.contains("op")) {
+    setNumberButtonDisabledTo(false);
+    setOperatorButtonDisabledTo(true, (subset = "after"));
+  }
+}
 
 const numberButtons = document.querySelectorAll("button.number");
 const operatorButtons = document.querySelectorAll("button.operator");
-setOperatorButtonDisabledTo(true, (subset = "after"));
 const clearButton = document.querySelector("#clear");
 const previousDisplay = document.querySelector(".display .previous");
 const currentDisplay = document.querySelector(".display .current");
+
+let valueStack = new Array();
+let operatorStack = new Array();
+let bracketDepth = 0;
+setButtons();
 
 numberButtons.forEach((numberButton) => {
   numberButton.addEventListener("click", () => {
     const id = numberButton.getAttribute("id");
     addNumberToCurrentDisplay(id);
+    setButtons();
   });
 });
 
@@ -473,6 +464,7 @@ operatorButtons.forEach((operatorButton) => {
   operatorButton.addEventListener("click", () => {
     const id = operatorButton.getAttribute("id");
     addOperatorToCurrentDisplay(id);
+    setButtons();
   });
 });
 
@@ -507,11 +499,12 @@ clearButton.addEventListener("click", () => {
       currentDisplay.removeChild(currentDisplay.children[indexToRemove]);
       currentDisplay.removeChild(currentDisplay.children[indexToRemove]);
       bracketDepth--;
+    } else if (indexToRemove === 0) {
+      currentDisplay.removeChild(currentDisplay.children[indexToRemove]);
+      previousDisplay.innerHTML = "";
     } else {
       currentDisplay.removeChild(currentDisplay.children[indexToRemove]);
     }
   }
+  setButtons();
 });
-
-let operatorStack = new Array();
-let valueStack = new Array();
