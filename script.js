@@ -350,7 +350,8 @@ function addOperatorToCurrentDisplay(buttonID) {
       activeElement = updateActiveElement(activeElement);
       break;
     case "equals":
-      const solution = getSolution();
+      const solution = parseFloat(getSolution().toFixed(10));
+
       newOperator.innerHTML = ` = `;
 
       const solutionDiv = document.createElement("div");
