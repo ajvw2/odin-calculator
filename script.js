@@ -1,57 +1,48 @@
-function getSolution(operation) {
+function getSolution() {
   valueStack = [];
   operatorStack = [];
-  const length = operation.length;
-  let currentValue = null;
-  let containsDecimalPoint = false;
-  const operators = ["/", "*", "+", "-", "^", "("];
-  const singleArgumentOperators = ["!", "s", "l", "n", "%"];
 
+  const operation = currentDisplay.querySelectorAll("div");
+  const length = operation.length;
+
+  let currentValue = null;
   for (let i = 0; i < length; i++) {
-    const char = operation[i];
-    const nextChar = operation[i + 1];
-    if (isNumeric(char) || isDot(char)) {
-      if (isDot(char)) containsDecimalPoint = true;
-      currentValue = currentValue === null ? char : currentValue + char;
-      if (
-        nextChar === undefined ||
-        (!isNumeric(nextChar) && !isDot(nextChar))
-      ) {
-        if (isValidValue(currentValue)) valueStack.push(currentValue);
-        currentValue = null;
-        containsDecimalPoint = false;
+    if (operation[i].classList.contains("num")) {
+      if (operation[i].classList.contains("pi")) {
+        currentValue = Math.PI;
+      } else if (operation[i].classList.contains("e")) {
+        currentValue = Math.E;
+      } else {
+        currentValue =
+          currentValue === null
+            ? operation[i].textContent
+            : currentValue + operation[i].textContent;
       }
-    } else if (char === "e") {
-      valueStack.push(Math.E);
-    } else if (char === "p") {
-      valueStack.push(Math.PI);
-    } else if (operators.includes(char)) {
-      operatorStack.push(char);
-    } else if (char === ")") {
-      evaluatePart();
-    } else if (singleArgumentOperators.includes(char)) {
-      let previousValue = valueStack.pop();
-      valueStack.push(calculate(char, previousValue));
+      if (
+        operation[i + 1] === undefined ||
+        operation[i + 1].classList.contains("op")
+      ) {
+        valueStack.push(currentValue);
+        currentValue = null;
+      }
+    } else if (operation[i].classList.contains("op")) {
+      operation[i].classList.remove("op");
+      const operator = operation[i].getAttribute("class");
+      if (operator === "factorial" || operator === "percentage")
+      {
+        const previousValue = valueStack.pop();
+        valueStack.push(calculate(operator, previousValue));
+      } else if (operator === "closing-bracket") {
+        evaluatePart();
+      } else {
+        operatorStack.push(operator);
+      }
     }
   }
 
   evaluatePart();
 
   return valueStack[0];
-}
-
-function isNumeric(char) {
-  const charCode = char.charCodeAt(0);
-  return charCode >= 48 && charCode <= 57;
-}
-
-function isDot(char) {
-  const charCode = char.charCodeAt(0);
-  return charCode === 46;
-}
-
-function isValidValue(value) {
-  return !(value === null || value.endsWith("."));
 }
 
 function evaluatePart() {
@@ -62,15 +53,23 @@ function evaluatePart() {
   let operator;
   let nextOperator;
   let nextNextOperator;
-  const lowOrderOps = ["+", "-"];
-  const midOrderOps = ["*", "/"];
+  const lowOrderOps = ["addition", "subtraction"];
+  const midOrderOps = ["multiplication", "division"];
+  const singleArgumentOps = ["factorial", "sqrt", "log", "ln", "percentage"];
 
-  while (valueStack.length > 1) {
+  while (valueStack.length > 1 || operatorStack.length > 0) {
     operator = operatorStack.pop();
-    if (operator === "(" || operator === undefined) {
+    if (operator === "opening-bracket" || operator === undefined) {
       break;
     }
+    
     a = valueStack.pop();
+
+    if (singleArgumentOps.includes(operator)) {
+      valueStack.push(calculate(operator, a));
+      break;
+    }
+
     b = valueStack.pop();
 
     if (
@@ -121,25 +120,25 @@ function evaluatePart() {
 
 function calculate(operator, ...args) {
   switch (operator) {
-    case "!":
+    case "factorial":
       return factorial(+args[0]);
-    case "s":
+    case "sqrt":
       return Math.sqrt(+args[0]);
-    case "l":
+    case "log":
       return Math.log10(+args[0]);
-    case "n":
+    case "ln":
       return Math.log(+args[0]);
-    case "%":
+    case "percentage":
       return +args[0] / 100;
-    case "^":
+    case "power":
       return Math.pow(+args[0], +args[1]);
-    case "/":
+    case "division":
       return +args[0] / +args[1];
-    case "*":
+    case "multiplication":
       return +args[0] * +args[1];
-    case "+":
+    case "addition":
       return +args[0] + +args[1];
-    case "-":
+    case "subtraction":
       return +args[0] - +args[1];
     default:
       return;
@@ -152,150 +151,276 @@ function factorial(n) {
     value *= i;
   }
   return value;
+
+  // TODO Gamma function https://math.stackexchange.com/questions/454053/how-do-we-calculate-factorials-for-numbers-with-decimal-places
+}
+
+function setNumberButtonDisabledTo(setting, subset = "all") {
+  // Subset
+  const specialNumbers = ["pi", "e", "answer"];
+  const dotAndSpecialNumbers = ["dot", "pi", "e", "answer"];
+
+  switch (subset) {
+    case "all":
+      numberButtons.forEach((numberButton) => {
+        numberButton.disabled = setting;
+      });
+      break;
+    case "special-numbers":
+      numberButtons.forEach((numberButton) => {
+        if (specialNumbers.includes(numberButton.getAttribute("id"))) {
+          numberButton.disabled = setting;
+        }
+      });
+      break;
+    case "dot-and-special-numbers":
+      numberButtons.forEach((numberButton) => {
+        if (dotAndSpecialNumbers.includes(numberButton.getAttribute("id"))) {
+          numberButton.disabled = setting;
+        }
+      });
+      break;
+  }
+}
+
+function setOperatorButtonDisabledTo(setting, subset = "all") {
+  // Subsets
+  const afterOperators = [
+    "factorial",
+    "percentage",
+    "power",
+    "division",
+    "multiplication",
+    "addition",
+    "subtraction",
+    "closing-bracket",
+    "equals",
+  ];
+
+  switch (subset) {
+    case "all":
+      operatorButtons.forEach((operatorButton) => {
+        operatorButton.disabled = setting;
+      });
+      break;
+    case "all-except-opening-bracket":
+      operatorButtons.forEach((operatorButton) => {
+        if (operatorButton.getAttribute("id") !== "opening-bracket") {
+          operatorButton.disabled = setting;
+        } else {
+          operatorButton.disabled = !setting;
+        }
+      });
+      break;
+    case "after":
+      operatorButtons.forEach((operatorButton) => {
+        if (afterOperators.includes(operatorButton.getAttribute("id"))) {
+          operatorButton.disabled = setting;
+        } else {
+          operatorButton.disabled = !setting;
+        }
+      });
+      break;
+  }
+
+  if (bracketDepth === 0) {
+    operatorButtons[7].disabled = true; // Disable closing bracket button
+  } else {
+    operatorButtons[12].disabled = true; // Disable equals button
+  }
+}
+
+function getActiveElement() {
+  const powerElements = document.querySelectorAll(".power.active");
+  if (powerElements.length !== 0) {
+    return powerElements[powerElements.length - 1];
+  } else {
+    return currentDisplay;
+  }
+}
+
+function updateActiveElement(activeElement) {
+  if (activeElement === currentDisplay) {
+    return currentDisplay;
+  }
+
+  if (
+    activeElement.contains(
+      document.querySelector(".closing-bracket.anticipating")
+    )
+  ) {
+    return activeElement;
+  }
+
+  activeElement.classList.remove("active");
+  activeElement = getActiveElement();
+  return updateActiveElement(activeElement);
 }
 
 function addNumberToCurrentDisplay(buttonID) {
+  const activeElement = getActiveElement();
+  const newNumber = document.createElement("div");
+  newNumber.classList.add("num");
+  newNumber.classList.add(buttonID);
+
   if (buttonID.startsWith("n") && buttonID.length === 2) {
     buttonID = buttonID.substring(1);
   }
 
-  if (superscriptOn) {
-    const supElement = document.getElementById(`sup${supID}`);
-    switch (buttonID) {
-      case "pi":
-        supElement.innerHTML += "&pi;";
-        break;
-      case "dot":
-        supElement.innerHTML += ".";
-        numberButtons[12].disabled = true;
-        break;
-      case "answer":
-        supElement.innerHTML += "";
-        break;
-      default:
-        supElement.innerHTML += `${buttonID}`;
-    }
-  } else {
-    switch (buttonID) {
-      case "pi":
-        currentDisplay.innerHTML += "&pi;";
-        break;
-      case "dot":
-        currentDisplay.innerHTML += ".";
-        numberButtons[12].disabled = true;
-        break;
-      case "answer":
-        currentDisplay.innerHTML += "";
-        break;
-      default:
-        currentDisplay.innerHTML += `${buttonID}`;
-    }
+  switch (buttonID) {
+    case "pi":
+      newNumber.innerHTML += "&pi;";
+      setNumberButtonDisabledTo(true);
+      break;
+    case "e":
+      newNumber.innerHTML += "e";
+      setNumberButtonDisabledTo(true);
+      break;
+    case "dot":
+      newNumber.innerHTML += ".";
+      setNumberButtonDisabledTo(true, (subset = "dot-and-special-numbers"));
+      setOperatorButtonDisabledTo(true, (subset = "all"));
+      activeElement.insertBefore(
+        newNumber,
+        activeElement.querySelector(".closing-bracket.anticipating")
+      );
+      return;
+    case "answer":
+      newNumber.innerHTML += "";
+      setNumberButtonDisabledTo(true);
+      break;
+    default:
+      newNumber.innerHTML += `${buttonID}`;
+      setNumberButtonDisabledTo(true, (subset = "special-numbers"));
   }
+
+  setOperatorButtonDisabledTo(false, (subset = "after"));
+  activeElement.insertBefore(
+    newNumber,
+    activeElement.querySelector(".closing-bracket.anticipating")
+  );
+}
+
+function addNewAnticipatingClosingBracket() {
+  const activeElement = getActiveElement();
+
+  const newClosingBracket = document.createElement("div");
+  newClosingBracket.classList.add("op");
+  newClosingBracket.classList.add("closing-bracket");
+  newClosingBracket.classList.add("anticipating");
+  newClosingBracket.innerHTML = ")";
+  activeElement.insertBefore(
+    newClosingBracket,
+    activeElement.querySelector(".closing-bracket.anticipating")
+  );
 }
 
 function addOperatorToCurrentDisplay(buttonID) {
+  let activeElement = getActiveElement();
+  const newOperator = document.createElement("div");
+  newOperator.classList.add("op");
+  newOperator.classList.add(buttonID);
+
   switch (buttonID) {
-    case "addition":
-      if (openForOperator) {
-        currentDisplay.innerHTML += " + ";
-        openForOperator = false;
-        break;
-      }
-    case "subtraction":
-      if (openForOperator) {
-        currentDisplay.innerHTML += " - ";
-        openForOperator = false;
-        break;
-      }
-    case "multiplication":
-      if (openForOperator) {
-        currentDisplay.innerHTML += " &times; ";
-        openForOperator = false;
-        break;
-      }
-    case "division":
-      if (openForOperator) {
-        currentDisplay.innerHTML += " &div; ";
-        openForOperator = false;
-        break;
-      }
     case "factorial":
-      if (openForOperator) {
-        currentDisplay.innerHTML += "!";
-        break;
-      }
+      newOperator.innerHTML = "!";
+      setNumberButtonDisabledTo(true);
+      setOperatorButtonDisabledTo(false, (subset = "after"));
+      activeElement.insertBefore(
+        newOperator,
+        activeElement.querySelector(".closing-bracket.anticipating")
+      );
+      return;
     case "percentage":
-      if (openForOperator) {
-        currentDisplay.innerHTML += "%";
-        break;
-      }
+      newOperator.innerHTML = "%";
+      setNumberButtonDisabledTo(true);
+      setOperatorButtonDisabledTo(false, (subset = "after"));
+      activeElement.insertBefore(
+        newOperator,
+        activeElement.querySelector(".closing-bracket.anticipating")
+      );
+      return;
     case "power":
-      if (openForOperator) {
-        supID++;
-        currentDisplay.innerHTML += `<sup id="sup${supID}"></sup>`;
-        openForOperator = false;
-        superscriptOn = true;
-        break;
-      }
+      newOperator.classList.add("active");
+      break;
     case "sqrt":
-      currentDisplay.innerHTML += "&Sqrt;";
+      newOperator.innerHTML = "&Sqrt;(";
+      bracketDepth++;
+      addNewAnticipatingClosingBracket();
       break;
     case "log":
-      currentDisplay.innerHTML += "log(";
+      newOperator.innerHTML = "log(";
+      bracketDepth++;
+      addNewAnticipatingClosingBracket();
       break;
     case "ln":
-      currentDisplay.innerHTML += "ln(";
+      newOperator.innerHTML = "ln(";
+      bracketDepth++;
+      addNewAnticipatingClosingBracket();
       break;
     case "opening-bracket":
-      if (openForOpeningBracket) {
-        currentDisplay.innerHTML += "(";
-        bracketDepth++;
-        break;
-      }
-    case "closing-bracket":
-      if (bracketDepth > 0 && openForClosingBracket) {
-        currentDisplay.innerHTML += ")";
-        bracketDepth--;
-      }
+      newOperator.innerHTML = "(";
+      bracketDepth++;
+      addNewAnticipatingClosingBracket();
       break;
+    case "closing-bracket":
+      const firstClosingBracket = document.querySelector(
+        ".closing-bracket.anticipating"
+      );
+      firstClosingBracket.classList.remove("anticipating");
+      bracketDepth--;
+      setNumberButtonDisabledTo(true);
+      setOperatorButtonDisabledTo(false, (subset = "after"));
+      return;
+    case "division":
+      newOperator.innerHTML = " &div; ";
+      activeElement = updateActiveElement(activeElement);
+      break;
+    case "multiplication":
+      newOperator.innerHTML = " &times; ";
+      activeElement = updateActiveElement(activeElement);
+      break;
+    case "addition":
+      newOperator.innerHTML = " + ";
+      activeElement = updateActiveElement(activeElement);
+      break;
+    case "subtraction":
+      newOperator.innerHTML = " - ";
+      activeElement = updateActiveElement(activeElement);
+      break;
+    case "equals":
+      getSol
+      newOperator.innerHTML = " = ";
   }
+
+  setNumberButtonDisabledTo(false);
+  setOperatorButtonDisabledTo(true, (subset = "after"));
+  activeElement.insertBefore(
+    newOperator,
+    activeElement.querySelector(".closing-bracket.anticipating")
+  );
 }
+
+let bracketDepth = 0;
 
 const numberButtons = document.querySelectorAll("button.number");
 const operatorButtons = document.querySelectorAll("button.operator");
+setOperatorButtonDisabledTo(true, (subset = "after"));
 const currentDisplay = document.querySelector(".display .current");
-
-let openForDecimal = true;
-let openForOperator = false;
-let superscriptOn = false;
-let supID = 0;
-let bracketDepth = 0;
-let openForOpeningBracket = true;
-let openForClosingBracket = false;
-let bracketOpenedOnSupNumber = 0;
 
 numberButtons.forEach((numberButton) => {
   numberButton.addEventListener("click", () => {
     const id = numberButton.getAttribute("id");
     addNumberToCurrentDisplay(id);
-    openForOperator = true;
-    openForOpeningBracket = false;
-    openForClosingBracket = true;
   });
 });
 
 operatorButtons.forEach((operatorButton) => {
   operatorButton.addEventListener("click", () => {
-    if (superscriptOn) superscriptOn = false;
     const id = operatorButton.getAttribute("id");
     addOperatorToCurrentDisplay(id);
-    numberButtons[12].disabled = false;
-    openForOpeningBracket = true;
-    openForClosingBracket = false;
   });
 });
-
-console.log(operatorButtons);
 
 let operatorStack = new Array();
 let valueStack = new Array();
