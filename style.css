@@ -62,6 +62,12 @@ sup {
   text-align: right;
 }
 
+.previous {
+    color: rgb(60, 116, 190);
+    font-size: 20px;
+}
+
+.previous div,
 .current div {
   display: inline;
 }
@@ -71,7 +77,7 @@ sup {
 }
 
 .closing-bracket {
-  color: black;
+  color: inherit;
 }
 
 .power {

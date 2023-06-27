@@ -28,12 +28,17 @@ function getSolution() {
     } else if (operation[i].classList.contains("op")) {
       operation[i].classList.remove("op");
       const operator = operation[i].getAttribute("class");
-      if (operator === "factorial" || operator === "percentage")
-      {
+      if (operator === "factorial" || operator === "percentage") {
         const previousValue = valueStack.pop();
         valueStack.push(calculate(operator, previousValue));
+      } else if (operator === "subtraction") {
+        valueStack.push(-1);
+
+        if (i >= 1) operatorStack.push("addition");
+        operatorStack.push("multiplication");
       } else if (operator === "closing-bracket") {
         evaluatePart();
+        console.log("bracket done");
       } else {
         operatorStack.push(operator);
       }
@@ -53,16 +58,19 @@ function evaluatePart() {
   let operator;
   let nextOperator;
   let nextNextOperator;
-  const lowOrderOps = ["addition", "subtraction"];
+  const lowOrderOps = ["addition"];
   const midOrderOps = ["multiplication", "division"];
-  const singleArgumentOps = ["factorial", "sqrt", "log", "ln", "percentage"];
+  const singleArgumentOps = ["sqrt", "log", "ln"];
 
   while (valueStack.length > 1 || operatorStack.length > 0) {
+    console.log(valueStack);
+    console.log(operatorStack);
+
     operator = operatorStack.pop();
     if (operator === "opening-bracket" || operator === undefined) {
       break;
     }
-    
+
     a = valueStack.pop();
 
     if (singleArgumentOps.includes(operator)) {
@@ -79,7 +87,8 @@ function evaluatePart() {
       nextOperator = operatorStack.pop();
       if (
         !lowOrderOps.includes(nextOperator) &&
-        !midOrderOps.includes(nextOperator)
+        !midOrderOps.includes(nextOperator) &&
+        nextOperator !== "opening-bracket"
       ) {
         c = valueStack.pop();
         valueStack.push(calculate(nextOperator, c, b));
@@ -138,8 +147,8 @@ function calculate(operator, ...args) {
       return +args[0] * +args[1];
     case "addition":
       return +args[0] + +args[1];
-    case "subtraction":
-      return +args[0] - +args[1];
+    // case "subtraction":
+    //   return +args[0] - +args[1];
     default:
       return;
   }
@@ -192,6 +201,17 @@ function setOperatorButtonDisabledTo(setting, subset = "all") {
     "division",
     "multiplication",
     "addition",
+    "closing-bracket",
+    "equals",
+  ];
+
+  const afterIncludingMinusOperators = [
+    "factorial",
+    "percentage",
+    "power",
+    "division",
+    "multiplication",
+    "addition",
     "subtraction",
     "closing-bracket",
     "equals",
@@ -215,6 +235,19 @@ function setOperatorButtonDisabledTo(setting, subset = "all") {
     case "after":
       operatorButtons.forEach((operatorButton) => {
         if (afterOperators.includes(operatorButton.getAttribute("id"))) {
+          operatorButton.disabled = setting;
+        } else {
+          operatorButton.disabled = !setting;
+        }
+      });
+      break;
+    case "after-including-minus":
+      operatorButtons.forEach((operatorButton) => {
+        if (
+          afterIncludingMinusOperators.includes(
+            operatorButton.getAttribute("id")
+          )
+        ) {
           operatorButton.disabled = setting;
         } else {
           operatorButton.disabled = !setting;
@@ -294,7 +327,7 @@ function addNumberToCurrentDisplay(buttonID) {
       setNumberButtonDisabledTo(true, (subset = "special-numbers"));
   }
 
-  setOperatorButtonDisabledTo(false, (subset = "after"));
+  setOperatorButtonDisabledTo(false, (subset = "after-including-minus"));
   activeElement.insertBefore(
     newNumber,
     activeElement.querySelector(".closing-bracket.anticipating")
@@ -389,8 +422,27 @@ function addOperatorToCurrentDisplay(buttonID) {
       activeElement = updateActiveElement(activeElement);
       break;
     case "equals":
-      getSol
-      newOperator.innerHTML = " = ";
+      const solution = getSolution();
+      newOperator.innerHTML = ` = `;
+      const solutionDiv = document.createElement("div");
+      solutionDiv.classList.add("num");
+      solutionDiv.textContent = `${solution}`;
+
+      currentDisplay.appendChild(newOperator);
+      currentDisplay.appendChild(solutionDiv);
+
+      previousDisplay.innerHTML = "";
+      const operation = currentDisplay.querySelectorAll("div");
+      operation.forEach((element) => {
+        previousDisplay.appendChild(element);
+      });
+
+      currentDisplay.innerHTML = "";
+      const solutionDivClone = solutionDiv.cloneNode(true);
+      currentDisplay.appendChild(solutionDivClone);
+      setNumberButtonDisabledTo(true);
+      setOperatorButtonDisabledTo(false, (subset = "after-including-minus"));
+      return;
   }
 
   setNumberButtonDisabledTo(false);
@@ -406,6 +458,8 @@ let bracketDepth = 0;
 const numberButtons = document.querySelectorAll("button.number");
 const operatorButtons = document.querySelectorAll("button.operator");
 setOperatorButtonDisabledTo(true, (subset = "after"));
+const clearButton = document.querySelector("#clear");
+const previousDisplay = document.querySelector(".display .previous");
 const currentDisplay = document.querySelector(".display .current");
 
 numberButtons.forEach((numberButton) => {
@@ -420,6 +474,43 @@ operatorButtons.forEach((operatorButton) => {
     const id = operatorButton.getAttribute("id");
     addOperatorToCurrentDisplay(id);
   });
+});
+
+clearButton.addEventListener("click", () => {
+  if (currentDisplay.hasChildNodes()) {
+    let indexToRemove;
+    for (let i = 0; i < currentDisplay.children.length; i++) {
+      if (
+        i === currentDisplay.children.length - 1 ||
+        currentDisplay.children[i + 1].classList.contains("anticipating")
+      ) {
+        indexToRemove = i;
+        break;
+      }
+    }
+
+    if (
+      currentDisplay.children[indexToRemove].classList.contains(
+        "closing-bracket"
+      )
+    ) {
+      currentDisplay.children[indexToRemove].classList.add("anticipating");
+      bracketDepth++;
+    } else if (
+      currentDisplay.children[indexToRemove].classList.contains(
+        "opening-bracket"
+      ) ||
+      currentDisplay.children[indexToRemove].classList.contains("sqrt") ||
+      currentDisplay.children[indexToRemove].classList.contains("log") ||
+      currentDisplay.children[indexToRemove].classList.contains("ln")
+    ) {
+      currentDisplay.removeChild(currentDisplay.children[indexToRemove]);
+      currentDisplay.removeChild(currentDisplay.children[indexToRemove]);
+      bracketDepth--;
+    } else {
+      currentDisplay.removeChild(currentDisplay.children[indexToRemove]);
+    }
+  }
 });
 
 let operatorStack = new Array();
