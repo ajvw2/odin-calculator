@@ -379,7 +379,7 @@ function addOperatorToCurrentDisplay(buttonID) {
     case "equals":
       deactivateAllPowerElements();
       let solution = getSolution();
-      solution = parseFloat(Number(solution).toFixed(9));
+      solution = parseFloat(Number(solution).toFixed(10));
 
       newOperator.innerHTML = ` = `;
 
@@ -392,10 +392,9 @@ function addOperatorToCurrentDisplay(buttonID) {
       currentDisplay.appendChild(solutionDiv);
 
       previousDisplay.innerHTML = "";
-      const operation = currentDisplay.querySelectorAll("div");
-      operation.forEach((element) => {
-        previousDisplay.appendChild(element);
-      });
+      while (currentDisplay.children.length > 0) {
+        previousDisplay.appendChild(currentDisplay.children[0]);
+      }
 
       currentDisplay.innerHTML = "";
       const solutionDivClone = solutionDiv.cloneNode(true);
