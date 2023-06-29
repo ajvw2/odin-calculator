@@ -109,7 +109,8 @@ function evaluatePart() {
         if (
           !lowOrderOps.includes(nextNextOperator) &&
           !midOrderOps.includes(nextNextOperator) &&
-          valueStack.length > 0
+          valueStack.length > 0 &&
+          nextNextOperator !== "opening-bracket"
         ) {
           d = valueStack.pop();
           valueStack.push(calculate(nextNextOperator, d, c));
@@ -230,8 +231,26 @@ function setOperatorButtonDisabledTo(setting, subset = "all") {
   }
 }
 
+function createInputSquare() {
+  const inputSquare = document.createElement("div");
+  inputSquare.classList.add("input-square");
+  inputSquare.innerHTML = "&#9633;";
+
+  let activeElement = getActiveElement();
+  activeElement.insertBefore(
+    inputSquare,
+    activeElement.querySelector(".closing-bracket.anticipating")
+  );
+}
+
+function removeInputSquare() {
+  const inputSquare = document.querySelector(".input-square");
+  let activeElement = getActiveElement();
+  activeElement.removeChild(inputSquare);
+}
+
 function getActiveElement() {
-  const powerElements = document.querySelectorAll(".power.active");
+  const powerElements = currentDisplay.querySelectorAll(".power.active");
   if (powerElements.length !== 0) {
     return powerElements[powerElements.length - 1];
   } else {
@@ -255,6 +274,13 @@ function updateActiveElement(activeElement) {
   activeElement.classList.remove("active");
   activeElement = getActiveElement();
   return updateActiveElement(activeElement);
+}
+
+function deactivateAllPowerElements() {
+  const powerElements = currentDisplay.querySelectorAll(".power.active");
+  powerElements.forEach((powerElement) =>
+    powerElement.classList.remove("active")
+  );
 }
 
 function addNumberToCurrentDisplay(buttonID) {
@@ -327,6 +353,7 @@ function addOperatorToCurrentDisplay(buttonID) {
       addNewAnticipatingClosingBracket();
       break;
     case "closing-bracket":
+      activeElement = updateActiveElement(activeElement);
       const firstClosingBracket = document.querySelector(
         ".closing-bracket.anticipating"
       );
@@ -350,7 +377,9 @@ function addOperatorToCurrentDisplay(buttonID) {
       activeElement = updateActiveElement(activeElement);
       break;
     case "equals":
-      const solution = parseFloat(getSolution().toFixed(10));
+      deactivateAllPowerElements();
+      let solution = getSolution();
+      solution = parseFloat(Number(solution).toFixed(9));
 
       newOperator.innerHTML = ` = `;
 
@@ -395,18 +424,20 @@ function addNewAnticipatingClosingBracket() {
 }
 
 function setButtons() {
-  if (!currentDisplay.children.length > 0) {
+  const activeElement = getActiveElement();
+
+  if (activeElement.children.length === 0) {
     setOperatorButtonDisabledTo(true, (subset = "after"));
     setNumberButtonDisabledTo(false);
     return;
   }
 
   let last;
-  const length = currentDisplay.children.length;
+  const length = activeElement.children.length;
   for (let i = 0; i < length; i++) {
-    let next = currentDisplay.children[i + 1];
+    let next = activeElement.children[i + 1];
     if (i === length - 1 || next.classList.contains("anticipating")) {
-      last = currentDisplay.children[i];
+      last = activeElement.children[i];
       break;
     }
   }
@@ -436,6 +467,9 @@ function setButtons() {
   ) {
     setNumberButtonDisabledTo(true);
     setOperatorButtonDisabledTo(false, (subset = "after-including-minus"));
+  } else if (last.classList.contains("power")) {
+    setNumberButtonDisabledTo(true);
+    setOperatorButtonDisabledTo(true, (subset = "after"));
   } else if (last.classList.contains("op")) {
     setNumberButtonDisabledTo(false);
     setOperatorButtonDisabledTo(true, (subset = "after"));
@@ -452,60 +486,79 @@ let valueStack = new Array();
 let operatorStack = new Array();
 let bracketDepth = 0;
 setButtons();
+createInputSquare();
 
 numberButtons.forEach((numberButton) => {
   numberButton.addEventListener("click", () => {
     const id = numberButton.getAttribute("id");
+    removeInputSquare();
     addNumberToCurrentDisplay(id);
     setButtons();
+    createInputSquare();
   });
 });
 
 operatorButtons.forEach((operatorButton) => {
   operatorButton.addEventListener("click", () => {
     const id = operatorButton.getAttribute("id");
+    removeInputSquare();
     addOperatorToCurrentDisplay(id);
     setButtons();
+    createInputSquare();
   });
 });
 
 clearButton.addEventListener("click", () => {
-  if (currentDisplay.hasChildNodes()) {
+  removeInputSquare();
+  let activeElement = getActiveElement();
+
+  if (activeElement.children.length < 1) {
+    activeElement.classList.remove("active");
+    activeElement = getActiveElement();
+  }
+
+  if (activeElement.children.length > 0) {
     let indexToRemove;
-    for (let i = 0; i < currentDisplay.children.length; i++) {
+    for (let i = 0; i < activeElement.children.length; i++) {
       if (
-        i === currentDisplay.children.length - 1 ||
-        currentDisplay.children[i + 1].classList.contains("anticipating")
+        i === activeElement.children.length - 1 ||
+        activeElement.children[i + 1].classList.contains("anticipating")
       ) {
         indexToRemove = i;
         break;
       }
     }
 
+    let elementToRemove = activeElement.children[indexToRemove];
+
     if (
-      currentDisplay.children[indexToRemove].classList.contains(
-        "closing-bracket"
-      )
+      elementToRemove.classList.contains("power") &&
+      !elementToRemove.classList.contains("active")
     ) {
-      currentDisplay.children[indexToRemove].classList.add("anticipating");
+      if (elementToRemove.children.length > 0) {
+        elementToRemove.classList.add("active");
+      } else {
+        activeElement.removeChild(elementToRemove);
+      }
+    } else if (elementToRemove.classList.contains("closing-bracket")) {
+      elementToRemove.classList.add("anticipating");
       bracketDepth++;
     } else if (
-      currentDisplay.children[indexToRemove].classList.contains(
-        "opening-bracket"
-      ) ||
-      currentDisplay.children[indexToRemove].classList.contains("sqrt") ||
-      currentDisplay.children[indexToRemove].classList.contains("log") ||
-      currentDisplay.children[indexToRemove].classList.contains("ln")
+      elementToRemove.classList.contains("opening-bracket") ||
+      elementToRemove.classList.contains("sqrt") ||
+      elementToRemove.classList.contains("log") ||
+      elementToRemove.classList.contains("ln")
     ) {
-      currentDisplay.removeChild(currentDisplay.children[indexToRemove]);
-      currentDisplay.removeChild(currentDisplay.children[indexToRemove]);
+      activeElement.removeChild(activeElement.children[indexToRemove]);
+      activeElement.removeChild(activeElement.children[indexToRemove]);
       bracketDepth--;
     } else if (indexToRemove === 0) {
-      currentDisplay.removeChild(currentDisplay.children[indexToRemove]);
+      activeElement.removeChild(elementToRemove);
       previousDisplay.innerHTML = "";
     } else {
-      currentDisplay.removeChild(currentDisplay.children[indexToRemove]);
+      activeElement.removeChild(elementToRemove);
     }
   }
   setButtons();
+  createInputSquare();
 });
