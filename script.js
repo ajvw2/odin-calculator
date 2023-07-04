@@ -38,7 +38,6 @@ function getSolution() {
         // proceeds the minus operator. This allows for correct evaluation of
         // inputs like 6 - 3 - 3 - 3.
         valueStack.push(-1);
-        console.log(operation[i - 1]);
         if (
           i >= 1 &&
           (operation[i - 1].classList.contains("num") ||
@@ -79,10 +78,10 @@ function evaluatePart() {
   const singleArgumentOps = ["sqrt", "log", "ln"];
 
   while (valueStack.length > 1 || operatorStack.length > 0) {
-    console.log("VALUE STACK");
-    console.log(valueStack);
-    console.log("OPERATOR STACK");
-    console.log(operatorStack);
+    // console.log("VALUE STACK");
+    // console.log(valueStack);
+    // console.log("OPERATOR STACK");
+    // console.log(operatorStack);
 
     operator = operatorStack.pop();
     if (operator === "opening-bracket" || operator === undefined) {
@@ -540,11 +539,19 @@ function updatePrevious() {
   }
 }
 
+function hasTouch() {
+  return 'ontouchstart' in document.documentElement
+         || navigator.maxTouchPoints > 0
+         || navigator.msMaxTouchPoints > 0;
+}
+
 const numberButtons = document.querySelectorAll("button.number");
 const operatorButtons = document.querySelectorAll("button.operator");
 const clearButton = document.querySelector("#clear");
 const previousDisplay = document.querySelector(".display .previous");
 const currentDisplay = document.querySelector(".display .current");
+
+if (!hasTouch()) document.body.className += ' has-hover'
 
 let valueStack = new Array();
 let operatorStack = new Array();

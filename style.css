@@ -176,8 +176,9 @@ button {
   -o-user-select: none;
 }
 
-button:hover {
+body.has-hover button:hover {
   background-color: #7a7a7a26;
+  box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.055);
 }
 
 button:active {
@@ -192,11 +193,11 @@ button:active {
   background-color: #7a7a7a30;
 }
 
-.operator:hover,
-#answer:hover,
-#pi:hover,
-#e:hover,
-#clear:hover {
+body.has-hover .operator:hover,
+body.has-hover #answer:hover,
+body.has-hover #pi:hover,
+body.has-hover #e:hover,
+body.has-hover #clear:hover {
   background-color: #7a7a7a44;
 }
 
@@ -212,7 +213,7 @@ button:active {
   background-color: #d35e73d2;
 }
 
-#equals:hover {
+body.has-hover #equals:hover {
   background-color: #d35e73;
 }
 
