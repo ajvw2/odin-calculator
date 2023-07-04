@@ -12,6 +12,8 @@ function getSolution() {
         currentValue = Math.PI;
       } else if (operation[i].classList.contains("e")) {
         currentValue = Math.E;
+      } else if (operation[i].classList.contains("answer")) {
+        currentValue = lastAnswer;
       } else {
         currentValue =
           currentValue === null
@@ -32,10 +34,17 @@ function getSolution() {
         const previousValue = valueStack.pop();
         valueStack.push(calculate(operator, previousValue));
       } else if (operator === "subtraction") {
+        // Convert subtraction to multiplication by -1 and addition if a number
+        // proceeds the minus operator. This allows for correct evaluation of
+        // inputs like 6 - 3 - 3 - 3.
         valueStack.push(-1);
-
         if (i >= 1 && operation[i - 1].classList.contains("num")) {
           operatorStack.push("addition");
+        } else if (i >= 1 && operation[i - 1].classList.contains("power")) {
+          // If the previous entry is a power operator (e.g. in the case of
+          // 8^-3), a virtual opening bracket is added to ensure correct order
+          // of operations in evaluatePart()
+          operatorStack.push("opening-bracket");
         }
         operatorStack.push("multiplication");
       } else if (operator === "closing-bracket") {
@@ -45,8 +54,9 @@ function getSolution() {
       }
     }
   }
-
-  evaluatePart();
+  while (valueStack.length > 1) {
+    evaluatePart();
+  }
 
   return valueStack[0];
 }
@@ -147,13 +157,16 @@ function calculate(operator, ...args) {
     case "power":
       return Math.pow(+args[0], +args[1]);
     case "division":
-      return +args[0] / +args[1];
+      // Allow for zero division error to occur
+      if (+args[1] === 0) {
+        return NaN;
+      } else {
+        return +args[0] / +args[1];
+      }
     case "multiplication":
       return +args[0] * +args[1];
     case "addition":
       return +args[0] + +args[1];
-    // case "subtraction":
-    //   return +args[0] - +args[1];
     default:
       return;
   }
@@ -191,6 +204,10 @@ function setNumberButtonDisabledTo(setting, subset = "all") {
         break;
     }
   });
+
+  if (lastAnswer === null) {
+    numberButtons[2].disabled = true; // Disable 'Ans' button
+  }
 }
 
 function setOperatorButtonDisabledTo(setting, subset = "all") {
@@ -304,7 +321,7 @@ function addNumberToCurrentDisplay(buttonID) {
       newNumber.innerHTML += ".";
       break;
     case "answer":
-      newNumber.innerHTML += "";
+      newNumber.innerHTML += "Ans";
       break;
     default:
       newNumber.innerHTML += `${buttonID}`;
@@ -374,7 +391,12 @@ function addOperatorToCurrentDisplay(buttonID) {
       break;
     case "subtraction":
       newOperator.innerHTML = " - ";
-      activeElement = updateActiveElement(activeElement);
+      // Active element doesn't get updated when it is empty.
+      // This allows for powers of negative numbers to be calculated
+      // without using brackets.
+      if (activeElement.children.length > 0) {
+        activeElement = updateActiveElement(activeElement);
+      }
       break;
     case "equals":
       deactivateAllPowerElements();
@@ -382,15 +404,23 @@ function addOperatorToCurrentDisplay(buttonID) {
       solution = parseFloat(Number(solution).toFixed(10));
 
       newOperator.innerHTML = ` = `;
+      currentDisplay.appendChild(newOperator);
 
       const solutionDiv = document.createElement("div");
       solutionDiv.classList.add("num");
       solutionDiv.classList.add("solution");
-      solutionDiv.textContent = `${solution}`;
 
-      currentDisplay.appendChild(newOperator);
-      currentDisplay.appendChild(solutionDiv);
 
+      if (isNaN(solution)) {
+        solutionDiv.textContent = "Error";
+        lastAnswer = null;
+      } else {
+        solutionDiv.textContent = `${solution}`;
+        lastAnswer = solution;
+        currentDisplay.appendChild(solutionDiv);
+      }
+
+    
       previousDisplay.innerHTML = "";
       while (currentDisplay.children.length > 0) {
         previousDisplay.appendChild(currentDisplay.children[0]);
@@ -475,6 +505,26 @@ function setButtons() {
   }
 }
 
+function updatePrevious() {
+  const length = previousDisplay.children.length;
+
+  // Clear previousDisplay when the previous calculation didn't have an
+  // answer, i.e. when an error was thrown
+  if (previousDisplay.children[length - 1].classList.contains("equals")) {
+    previousDisplay.innerHTML = "";
+  } else if (length > 3 || !previousDisplay.children[0].classList.contains("answer")) {
+    while (!previousDisplay.children[0].classList.contains("equals")) {
+      previousDisplay.removeChild(previousDisplay.children[0]);
+    }
+
+    const answer = document.createElement("div");
+    answer.classList.add("num");
+    answer.classList.add("answer");
+    answer.textContent = "Ans";
+    previousDisplay.insertBefore(answer, previousDisplay.children[0]);
+  }
+}
+
 const numberButtons = document.querySelectorAll("button.number");
 const operatorButtons = document.querySelectorAll("button.operator");
 const clearButton = document.querySelector("#clear");
@@ -484,6 +534,7 @@ const currentDisplay = document.querySelector(".display .current");
 let valueStack = new Array();
 let operatorStack = new Array();
 let bracketDepth = 0;
+let lastAnswer = null;
 setButtons();
 createInputSquare();
 
@@ -492,7 +543,9 @@ numberButtons.forEach((numberButton) => {
     const id = numberButton.getAttribute("id");
     removeInputSquare();
     addNumberToCurrentDisplay(id);
+    clearButton.textContent = 'CE';
     setButtons();
+    if (previousDisplay.children.length > 0) updatePrevious();
     createInputSquare();
   });
 });
@@ -503,12 +556,19 @@ operatorButtons.forEach((operatorButton) => {
     removeInputSquare();
     addOperatorToCurrentDisplay(id);
     setButtons();
+    if (previousDisplay.children.length > 0 && id !== "equals") updatePrevious();
+    if (id === "equals") {
+      clearButton.textContent = 'AC';
+    } else {
+      clearButton.textContent = 'CE';
+    }
     createInputSquare();
   });
 });
 
 clearButton.addEventListener("click", () => {
   removeInputSquare();
+  clearButton.textContent = 'CE';
   let activeElement = getActiveElement();
 
   if (activeElement.children.length < 1) {
@@ -551,13 +611,11 @@ clearButton.addEventListener("click", () => {
       activeElement.removeChild(activeElement.children[indexToRemove]);
       activeElement.removeChild(activeElement.children[indexToRemove]);
       bracketDepth--;
-    } else if (indexToRemove === 0) {
-      activeElement.removeChild(elementToRemove);
-      previousDisplay.innerHTML = "";
     } else {
       activeElement.removeChild(elementToRemove);
     }
   }
   setButtons();
+  if (previousDisplay.children.length > 0) updatePrevious();
   createInputSquare();
 });
