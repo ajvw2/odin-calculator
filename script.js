@@ -545,6 +545,13 @@ function hasTouch() {
          || navigator.msMaxTouchPoints > 0;
 }
 
+function setViewportHeightUnit() {
+  let vh = window.innerHeight * 0.01;
+  // Set vh in --vh custom property to the root of the document
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+
+setViewportHeightUnit();
 const numberButtons = document.querySelectorAll("button.number");
 const operatorButtons = document.querySelectorAll("button.operator");
 const clearButton = document.querySelector("#clear");
@@ -709,3 +716,5 @@ window.addEventListener("keydown", function (e) {
     document.getElementById(`n${e.key}`).click();
   }
 });
+
+window.addEventListener('resize', setViewportHeightUnit);
