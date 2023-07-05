@@ -167,13 +167,15 @@ button {
   font-size: 16px;
   font-weight: 500;
 
-  transition: all 0.2s ease;
-
   user-select: none;
   -moz-user-select: none;
   -khtml-user-select: none;
   -webkit-user-select: none;
   -o-user-select: none;
+}
+
+body.has-hover button {
+  transition: all 0.2s ease;
 }
 
 body.has-hover button:hover {
@@ -221,9 +223,121 @@ body.has-hover #equals:hover {
   background-color: #e6677e;
 }
 
+#factorial {
+  order: 0;
+}
+
+#p {
+  order: 1;
+}
+
+#e {
+  order: 2;
+}
+
+#percentage {
+  order: 3;
+}
+
+#power {
+  order: 4;
+}
+
+#sqrt {
+  order: 5;
+}
+
+#log {
+  order: 6;
+}
+
+#ln {
+  order: 7;
+}
+
+#opening-bracket {
+  order: 8;
+}
+
+#closing-bracket {
+  order: 9;
+}
+
+#answer {
+  order: 10;
+}
+
+#clear {
+  order: 11;
+}
+
+#n7 {
+  order: 12;
+}
+
+#n8 {
+  order: 13;
+}
+
+#n9 {
+  order: 14;
+}
+
+#division {
+  order: 15;
+}
+
+#n4 {
+  order: 16;
+}
+
+#n5 {
+  order: 17;
+}
+
+#n6 {
+  order: 18;
+}
+
+#multiplication {
+  order: 19;
+}
+
+#n1 {
+  order: 20;
+}
+
+#n2 {
+  order: 21;
+}
+
+#n3 {
+  order: 22;
+}
+
+#addition {
+  order: 23;
+}
+
+#dot {
+  order: 24;
+}
+
+#n0 {
+  order: 25;
+}
+
+#equals {
+  order: 26;
+}
+
+#subtraction {
+  order: 27;
+}
+
 @media (max-width: 500px) {
   .calculator-wrapper {
-    max-width: 100vw;
+    
     justify-content: normal;
   }
 
@@ -235,5 +349,127 @@ body.has-hover #equals:hover {
 @media (max-height: 700px) {
   .calculator {
     border-radius: 0px;
+  }
+}
+
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  .calculator-wrapper {
+    width: 100vw;
+  }
+
+  .calculator .buttons {
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  }
+
+  #factorial {
+    order: 0;
+  }
+  
+  #p {
+    order: 1;
+  }
+  
+  #e {
+    order: 8;
+  }
+  
+  #percentage {
+    order: 21;
+  }
+  
+  #power {
+    order: 15;
+  }
+  
+  #sqrt {
+    order: 22;
+  }
+  
+  #log {
+    order: 14;
+  }
+  
+  #ln {
+    order: 7;
+  }
+  
+  #opening-bracket {
+    order: 16;
+  }
+  
+  #closing-bracket {
+    order: 23;
+  }
+  
+  #answer {
+    order: 9;
+  }
+  
+  #clear {
+    order: 2;
+  }
+  
+  #n7 {
+    order: 3;
+  }
+  
+  #n8 {
+    order: 4;
+  }
+  
+  #n9 {
+    order: 5;
+  }
+  
+  #division {
+    order: 6;
+  }
+  
+  #n4 {
+    order: 10;
+  }
+  
+  #n5 {
+    order: 11;
+  }
+  
+  #n6 {
+    order: 12;
+  }
+  
+  #multiplication {
+    order: 13;
+  }
+  
+  #n1 {
+    order: 17;
+  }
+  
+  #n2 {
+    order: 18;
+  }
+  
+  #n3 {
+    order: 19;
+  }
+  
+  #addition {
+    order: 20;
+  }
+  
+  #dot {
+    order: 24;
+  }
+  
+  #n0 {
+    order: 25;
+  }
+  
+  #equals {
+    order: 26;
+  }
+  
+  #subtraction {
+    order: 27;
   }
 }
