@@ -655,6 +655,7 @@ numberButtons.forEach((numberButton) => {
     setButtons();
     if (previousDisplay.children.length > 0) updatePrevious();
     createInputSquare();
+    numberButton.blur(); 
   });
 });
 
@@ -672,6 +673,7 @@ operatorButtons.forEach((operatorButton) => {
       clearButton.textContent = "CE";
     }
     createInputSquare();
+    operatorButton.blur();
   });
 });
 
@@ -727,6 +729,7 @@ clearButton.addEventListener("click", () => {
   setButtons();
   if (previousDisplay.children.length > 0) updatePrevious();
   createInputSquare();
+  clearButton.blur();
 });
 
 colorModeSwitch.addEventListener('change', switchColorMode);

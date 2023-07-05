@@ -32,6 +32,7 @@ html {
   --operator-button-color: #6e55a830;
   --operator-button-color-hover: #6e55a844;
   --operator-button-color-active: #6e55a858;
+  --shadow-color-button-hover: rgba(104, 104, 104, 0.055);
   --shadow-color-calc: rgba(0, 0, 0, 0.13);
   --text-color: #1d0531;
   --text-color-secondary: #2d0f46b7;
@@ -53,6 +54,7 @@ html {
   --operator-button-color: #7a7a7a30;
   --operator-button-color-hover: #7a7a7a44;
   --operator-button-color-active: #7a7a7a58;
+  --shadow-color-button-hover: rgba(0, 0, 0, 0.055);
   --shadow-color-calc: black;
   --text-color: #e1e1e1;
   --text-color-secondary: #e1e1e1b7;
@@ -151,6 +153,10 @@ body {
   background-color: var(--bg-color-switch);
   -webkit-transition: .4s;
   transition: .4s;
+}
+
+body.has-hover .slider:hover {
+  background-color: var(--equals-button-color);
 }
 
 .slider:before {
@@ -256,6 +262,8 @@ button {
   background-color: var(--number-button-color);
   border: none;
   border-radius: 2px;
+  /* outline: none;
+  box-shadow: none; */
 
   color: inherit;
   font-family: inherit;
@@ -275,7 +283,7 @@ body.has-hover button {
 
 body.has-hover button:hover {
   background-color: var(--number-button-color-hover);
-  box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.055);
+  box-shadow: 0 0 10px 2px var(--shadow-color-button-hover);
 }
 
 button:active {
