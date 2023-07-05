@@ -16,7 +16,6 @@ html {
 
 body {
   display: flex;
-  align-items: center;
   justify-content: center;
 
   height: 100vh;
@@ -229,6 +228,12 @@ body.has-hover #equals:hover {
     justify-content: normal;
   }
 
+  .calculator {
+    border-radius: 0px;
+  }
+}
+
+@media (max-height: 700px) {
   .calculator {
     border-radius: 0px;
   }
