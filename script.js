@@ -1,5 +1,5 @@
 function getSolution() {
-  /* Use an adaptation of Dijkstra's Two-Stack Algorithm to
+  /* Adaptation of Dijkstra's Two-Stack Algorithm to
    * evaluate the mathematical expression and return the
    * solution.
    */
@@ -291,9 +291,7 @@ function updateActiveElement(activeElement) {
    */
 
   // Base case 1: Active element is current display
-  if (activeElement === currentDisplay) {
-    return currentDisplay;
-  }
+  if (activeElement === currentDisplay) return currentDisplay;
 
   // Base case 2: Active element contains unclosed closing bracket
   if (
@@ -319,28 +317,25 @@ function deactivateAllPowerElements() {
 }
 
 function createInputSquare() {
-  const inputSquare = document.createElement("div");
-  inputSquare.classList.add("input-square");
-  inputSquare.innerHTML = "&#9633;";
+  const square = document.createElement("div");
+  square.classList.add("input-square");
+  square.innerHTML = "&#9633;";
 
-  let activeElement = getActiveElement();
-  activeElement.insertBefore(
-    inputSquare,
-    activeElement.querySelector(".closing-bracket.anticipating")
-  );
+  const a = getActiveElement();
+  a.insertBefore(square, a.querySelector(".closing-bracket.anticipating"));
 }
 
 function removeInputSquare() {
-  const inputSquare = document.querySelector(".input-square");
-  let activeElement = getActiveElement();
-  activeElement.removeChild(inputSquare);
+  const square = document.querySelector(".input-square");
+  const a = getActiveElement();
+  a.removeChild(square);
 }
 
 function addNumberToCurrentDisplay(buttonID) {
   const activeElement = getActiveElement();
-  const newNumber = document.createElement("div");
-  newNumber.classList.add("num");
-  newNumber.classList.add(buttonID);
+  const number = document.createElement("div");
+  number.classList.add("num");
+  number.classList.add(buttonID);
 
   if (buttonID.startsWith("n") && buttonID.length === 2) {
     buttonID = buttonID.substring(1);
@@ -348,62 +343,59 @@ function addNumberToCurrentDisplay(buttonID) {
 
   switch (buttonID) {
     case "pi":
-      newNumber.innerHTML += "&pi;";
-      break;
-    case "e":
-      newNumber.innerHTML += "e";
+      number.innerHTML += "&pi;";
       break;
     case "dot":
-      newNumber.innerHTML += ".";
+      number.innerHTML += ".";
       hasDecimal = true;
       break;
     case "answer":
-      newNumber.innerHTML += "Ans";
+      number.innerHTML += "Ans";
       break;
     default:
-      newNumber.innerHTML += `${buttonID}`;
+      number.innerHTML += `${buttonID}`;
   }
 
   activeElement.insertBefore(
-    newNumber,
+    number,
     activeElement.querySelector(".closing-bracket.anticipating")
   );
 }
 
 function addOperatorToCurrentDisplay(buttonID) {
   let activeElement = getActiveElement();
-  const newOperator = document.createElement("div");
-  newOperator.classList.add("op");
-  newOperator.classList.add(buttonID);
+  const operator = document.createElement("div");
+  operator.classList.add("op");
+  operator.classList.add(buttonID);
   hasDecimal = false;
 
   switch (buttonID) {
     case "factorial":
-      newOperator.innerHTML = "!";
+      operator.innerHTML = "!";
       break;
     case "percentage":
-      newOperator.innerHTML = "%";
+      operator.innerHTML = "%";
       break;
     case "power":
-      newOperator.classList.add("active");
+      operator.classList.add("active");
       break;
     case "sqrt":
-      newOperator.innerHTML = "&Sqrt;(";
+      operator.innerHTML = "&Sqrt;(";
       bracketDepth++;
       addNewAnticipatingClosingBracket();
       break;
     case "log":
-      newOperator.innerHTML = "log(";
+      operator.innerHTML = "log(";
       bracketDepth++;
       addNewAnticipatingClosingBracket();
       break;
     case "ln":
-      newOperator.innerHTML = "ln(";
+      operator.innerHTML = "ln(";
       bracketDepth++;
       addNewAnticipatingClosingBracket();
       break;
     case "opening-bracket":
-      newOperator.innerHTML = "(";
+      operator.innerHTML = "(";
       bracketDepth++;
       addNewAnticipatingClosingBracket();
       break;
@@ -416,19 +408,19 @@ function addOperatorToCurrentDisplay(buttonID) {
       bracketDepth--;
       return;
     case "division":
-      newOperator.innerHTML = " &div; ";
+      operator.innerHTML = " &div; ";
       activeElement = updateActiveElement(activeElement);
       break;
     case "multiplication":
-      newOperator.innerHTML = " &times; ";
+      operator.innerHTML = " &times; ";
       activeElement = updateActiveElement(activeElement);
       break;
     case "addition":
-      newOperator.innerHTML = " + ";
+      operator.innerHTML = " + ";
       activeElement = updateActiveElement(activeElement);
       break;
     case "subtraction":
-      newOperator.innerHTML = " - ";
+      operator.innerHTML = " - ";
       // Active element doesn't get updated when it is empty.
       // This allows for powers of negative numbers to be calculated
       // without using brackets.
@@ -441,8 +433,8 @@ function addOperatorToCurrentDisplay(buttonID) {
       let solution = getSolution();
       solution = parseFloat(Number(solution).toFixed(10));
 
-      newOperator.innerHTML = ` = `;
-      currentDisplay.appendChild(newOperator);
+      operator.innerHTML = ` = `;
+      currentDisplay.appendChild(operator);
 
       const solutionDiv = document.createElement("div");
       solutionDiv.classList.add("num");
@@ -469,7 +461,7 @@ function addOperatorToCurrentDisplay(buttonID) {
   }
 
   activeElement.insertBefore(
-    newOperator,
+    operator,
     activeElement.querySelector(".closing-bracket.anticipating")
   );
 }
@@ -558,14 +550,12 @@ function setButtons() {
    */
   const activeElement = getActiveElement();
 
-  // Empty active element
   if (activeElement.children.length === 0) {
     disableOpButtons(true, (subset = "after"));
     disableNumButtons(false);
     return;
   }
 
-  // Get last element
   let last;
   const length = activeElement.children.length;
   for (let i = 0; i < length; i++) {
@@ -578,7 +568,6 @@ function setButtons() {
     }
   }
 
-  // Button disable-enable conditions
   if (last.matches(".pi, .e, .answer")) {
     disableNumButtons(true);
     disableOpButtons(false, (subset = "after-including-minus"));
@@ -609,17 +598,17 @@ function clear() {
   /* Backspace function, remove previous input of current operation */
   let activeElement = getActiveElement();
 
-  // If 'power' div is empty, go to parent. This will allow for removal 
-  // of the 'power' div itself. The parent will always have children, 
-  // since (a) it contains a 'power' div, and (b) a 'power' div can only 
+  // If 'power' div is empty, go to parent. This will allow for removal
+  // of the 'power' div itself. The parent will always have children,
+  // since (a) it contains a 'power' div, and (b) a 'power' div can only
   // follow a number.
   if (activeElement.children.length < 1) {
     activeElement.classList.remove("active");
     activeElement = getActiveElement();
   }
 
-  // Don't do anything when the active element is empty. As per the 
-  // condition above, this can only be the case when the active element 
+  // Don't do anything when the active element is empty. As per the
+  // condition above, this can only be the case when the active element
   // is currentDisplay.
   const length = activeElement.children.length;
   if (length < 1) return;
