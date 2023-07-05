@@ -114,9 +114,36 @@ function evaluatePart() {
         operatorStack.push(operator);
         continue;
       }
+      if (operator === "division" && nextOperator === "division") {
+        // For chain division inputs, e.g. 5 / 5 / 5 / 5 / 5.
+        c = valueStack.pop();
+        let divisionStack = [a, b, c]
+        let divisionDepth = 2;
+        nextOperator = operatorStack.pop();
+        while (nextOperator === "division") {
+          divisionDepth++;
+          nextOperator = operatorStack.pop();
+        }
+        // Push back the last popped operator if it isn't undefined 
+        // (i.e. end of stack was reached) or isn't 'division'.
+        if (nextOperator && nextOperator !== "division") operatorStack.push(nextOperator);
+
+        for (let i = divisionDepth; i > 2; i--) {
+          divisionStack.push(valueStack.pop());
+        }
+
+        valueStack.push(divisionStack.pop());
+
+        for (let i = 0; i < divisionDepth; i++) {
+          a = valueStack.pop();
+          b = divisionStack.pop();
+          valueStack.push(calculate("division", a, b));
+        }
+        continue;
+      }
       if (
         midOrderOps.includes(nextOperator) &&
-        lowOrderOps.includes(operator)
+        (lowOrderOps.includes(operator) || operator === "multiplication")
       ) {
         c = valueStack.pop();
         if (valueStack.length > 0) {
@@ -133,6 +160,35 @@ function evaluatePart() {
             valueStack.push(b);
             valueStack.push(a);
             operatorStack.push(nextOperator);
+            operatorStack.push(operator);
+            continue;
+          }
+          if (nextOperator === "division" && nextNextOperator === "division") {
+            d = valueStack.pop();
+            let divisionStack = [b, c, d];
+            let divisionDepth = 2;
+            nextNextOperator = operatorStack.pop();
+
+            while (nextNextOperator === "division") {
+              divisionDepth++;
+              nextNextOperator = operatorStack.pop();
+            }
+            // Push back the last popped operator if it isn't undefined 
+            // (i.e. end of stack was reached) or isn't 'division'.
+            if (nextNextOperator && nextNextOperator !== "division") operatorStack.push(nextNextOperator);
+
+            for (let i = divisionDepth; i > 2; i--) {
+              divisionStack.push(valueStack.pop());
+            }
+    
+            valueStack.push(divisionStack.pop());
+    
+            for (let i = 0; i < divisionDepth; i++) {
+              b = valueStack.pop();
+              c = divisionStack.pop();
+              valueStack.push(calculate("division", b, c));
+            }
+            valueStack.push(a);
             operatorStack.push(operator);
             continue;
           }
