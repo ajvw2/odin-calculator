@@ -11,6 +11,10 @@
     <div class="calculator-wrapper">
         <div class="calculator">
             <div class="display">
+                <label class="switch">
+                    <input type="checkbox" id="color-mode-switch">
+                    <span class="slider"></span>
+                </label> 
                 <div class="previous"></div>
                 <div class="current">
                 </div>
@@ -44,6 +48,19 @@
                 <button class="number" id="n0">0</button>
                 <button class="operator" id="equals">=</button>
                 <button class="operator" id="subtraction">-</button>
+            </div>
+            <div class="copyright">
+                <p>
+                    Copyright ©
+                    <script>
+                        document.write(new Date().getFullYear());
+                    </script>
+                    ajvw2.
+                    All rights reserved.
+                    <a href="https://github.com/ajvw2" target="_blank">
+                        <img src="./images/github-mark.png" alt="" id="github">
+                    </a>
+                </p>
             </div>
         </div>
     </div>

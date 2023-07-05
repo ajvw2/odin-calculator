@@ -551,13 +551,35 @@ function setViewportHeightUnit() {
   document.documentElement.style.setProperty('--vh', `${vh}px`);
 }
 
-setViewportHeightUnit();
+function switchColorMode() {
+  document.documentElement.classList.toggle("dark");
+  document.documentElement.classList.toggle("light");
+
+  const userPreference = document.documentElement.classList.value;
+  localStorage.setItem("mode", userPreference);
+}
+
+function setColorModeFromPreference() {
+  const userPreference = localStorage.getItem("mode");
+
+  if (userPreference === "dark") {
+    document.documentElement.classList.toggle("dark");
+    colorModeSwitch.checked = true;
+  } else {
+    document.documentElement.classList.toggle("light");
+    colorModeSwitch.checked = false;
+  }
+}
+
 const numberButtons = document.querySelectorAll("button.number");
 const operatorButtons = document.querySelectorAll("button.operator");
 const clearButton = document.querySelector("#clear");
 const previousDisplay = document.querySelector(".display .previous");
 const currentDisplay = document.querySelector(".display .current");
+const colorModeSwitch = document.querySelector("#color-mode-switch");
 
+setViewportHeightUnit();
+setColorModeFromPreference();
 if (!hasTouch()) document.body.className += ' has-hover'
 
 let valueStack = new Array();
@@ -650,6 +672,8 @@ clearButton.addEventListener("click", () => {
   if (previousDisplay.children.length > 0) updatePrevious();
   createInputSquare();
 });
+
+colorModeSwitch.addEventListener('change', switchColorMode);
 
 window.addEventListener("keydown", function (e) {
   switch (e.key) {
