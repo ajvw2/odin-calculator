@@ -331,17 +331,17 @@ function removeInputSquare() {
   a.removeChild(square);
 }
 
-function addNumberToCurrentDisplay(buttonID) {
+function addNumberToCurrentDisplay(buttonId) {
   const activeElement = getActiveElement();
   const number = document.createElement("div");
   number.classList.add("num");
-  number.classList.add(buttonID);
+  number.classList.add(buttonId);
 
-  if (buttonID.startsWith("n") && buttonID.length === 2) {
-    buttonID = buttonID.substring(1);
+  if (buttonId.startsWith("n") && buttonId.length === 2) {
+    buttonId = buttonId.substring(1);
   }
 
-  switch (buttonID) {
+  switch (buttonId) {
     case "pi":
       number.innerHTML += "&pi;";
       break;
@@ -353,7 +353,7 @@ function addNumberToCurrentDisplay(buttonID) {
       number.innerHTML += "Ans";
       break;
     default:
-      number.innerHTML += `${buttonID}`;
+      number.innerHTML += `${buttonId}`;
   }
 
   activeElement.insertBefore(
@@ -362,14 +362,14 @@ function addNumberToCurrentDisplay(buttonID) {
   );
 }
 
-function addOperatorToCurrentDisplay(buttonID) {
+function addOperatorToCurrentDisplay(buttonId) {
   let activeElement = getActiveElement();
   const operator = document.createElement("div");
   operator.classList.add("op");
-  operator.classList.add(buttonID);
+  operator.classList.add(buttonId);
   hasDecimal = false;
 
-  switch (buttonID) {
+  switch (buttonId) {
     case "factorial":
       operator.innerHTML = "!";
       break;
