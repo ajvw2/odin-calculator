@@ -572,11 +572,11 @@ function updatePrevious() {
   /* Update display of previous operation */
   const length = previousDisplay.children.length;
   if (previousDisplay.children[length - 1].matches(".equals")) {
-    // Clear previousDisplay when the previous calculation didn't have an 
+    // Clear previousDisplay when the previous calculation didn't have an
     // answer, i.e. when an error was thrown.
     previousDisplay.innerHTML = "";
   } else if (length > 3 || !previousDisplay.children[0].matches(".answer")) {
-    // Replace the full previous operation by "Ans", i.e. '5 + 1 = 6' becomes 
+    // Replace the full previous operation by "Ans", i.e. '5 + 1 = 6' becomes
     // 'Ans = 6'.
     while (!previousDisplay.children[0].matches(".equals")) {
       previousDisplay.removeChild(previousDisplay.children[0]);
@@ -697,7 +697,13 @@ clearButton.addEventListener("click", () => {
 });
 
 window.addEventListener("keydown", function (e) {
-  console.log(e.key);
-  const button = keyMap[e.key];
+  console.log(e);
+
+  let button;
+  if (e.key === "Dead" && e.code === "Digit6") {
+    button = keyMap["^"];
+  } else {
+    button = keyMap[e.key];
+  }
   if (button) document.getElementById(button).click();
 });
