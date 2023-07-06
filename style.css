@@ -106,6 +106,7 @@ body {
   flex-direction: column;
   justify-content: space-between;
   overflow-wrap: break-word;
+  overflow-y: auto;
 
   flex: 1;
   min-height: 100px;
@@ -124,6 +125,28 @@ body {
   font-size: 32px;
   text-align: right;
   font-family: "Orbitron", sans-serif;
+}
+
+.calculator .display::-webkit-scrollbar {
+  width: 14px;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.calculator .display::-webkit-scrollbar-track {
+  background-color: var(--bg-color-switch);
+  border-radius: 2px;
+  border-top-right-radius: 10px;
+}
+
+.calculator .display::-webkit-scrollbar-thumb {
+  background-color: var(--text-color);
+  border-radius: 2px;
+  border-top-right-radius: 10px;
+}
+
+body.has-hover .calculator .display::-webkit-scrollbar-track:hover {
+  background-color: var(--equals-button-color);
 }
 
 .switch {

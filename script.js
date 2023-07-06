@@ -1,12 +1,11 @@
 function getSolution() {
-  /***************************************************************************
-   * Adaptation of Dijkstra's Two-Stack Algorithm to evaluate the mathemati- *
-   * cal expression and return the solution. The elements of the expression  *
-   * are put on the display in separate divs with unique classes, i.e. there *
-   * is a unique div type for each number and operator. This function loops  *
-   * through the divs and pushed the contents of the divs onto the right     *
-   * stacks, according to the classes of the divs.                           *
-   ***************************************************************************/
+  /* Adaptation of Dijkstra's Two-Stack Algorithm to evaluate the mathemati- 
+   * cal expression and return the solution. The elements of the expression  
+   * are put on the display in separate divs with unique classes, i.e. there 
+   * is a unique div type for each number and operator. This function loops  
+   * through the divs and pushed the contents of the divs onto the right     
+   * stacks, according to the classes of the divs.                           
+   */
   valueStack = [];
   operatorStack = [];
 
@@ -697,13 +696,12 @@ clearButton.addEventListener("click", () => {
 });
 
 window.addEventListener("keydown", function (e) {
-  console.log(e);
-
   let button;
   if (e.key === "Dead" && e.code === "Digit6") {
     button = keyMap["^"];
   } else {
     button = keyMap[e.key];
   }
+
   if (button) document.getElementById(button).click();
 });
