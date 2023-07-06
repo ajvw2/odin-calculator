@@ -217,7 +217,7 @@ input:checked + .slider:before {
   }
 }
 
-.closing-bracket.anticipating {
+.closing-bracket.unclosed {
   color: var(--text-color-tertiary);
 }
 

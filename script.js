@@ -1,8 +1,12 @@
 function getSolution() {
-  /* Adaptation of Dijkstra's Two-Stack Algorithm to
-   * evaluate the mathematical expression and return the
-   * solution.
-   */
+  /***************************************************************************
+   * Adaptation of Dijkstra's Two-Stack Algorithm to evaluate the mathemati- *
+   * cal expression and return the solution. The elements of the expression  *
+   * are put on the display in separate divs with unique classes, i.e. there *
+   * is a unique div type for each number and operator. This function loops  *
+   * through the divs and pushed the contents of the divs onto the right     *
+   * stacks, according to the classes of the divs.                           *
+   ***************************************************************************/
   valueStack = [];
   operatorStack = [];
 
@@ -10,11 +14,10 @@ function getSolution() {
   const length = expression.length;
 
   let currentValue = null;
+  let negativePower = false;
   for (let i = 0; i < length; i++) {
     const element = expression[i];
     if (element.matches(".num")) {
-      // Update currentValue when the current expression element
-      // is a number
       if (element.matches(".pi")) {
         currentValue = Math.PI;
       } else if (element.matches(".e")) {
@@ -23,15 +26,19 @@ function getSolution() {
         currentValue = lastAnswer;
       } else {
         // Concatenate numbers 0-9 and decimal point to currentValue
-        const n = element.textContent;
-        currentValue = !currentValue ? n : currentValue + n;
+        const number = element.textContent;
+        currentValue = !currentValue ? number : currentValue + number;
       }
-      // Push currentValue to valueStack when the full number has
-      // been read into currentValue. Reset currentValue.
+      // Push currentValue to valueStack whe full number is processed.
       const next = expression[i + 1];
       if (!next || next.matches(".op")) {
         valueStack.push(currentValue);
         currentValue = null;
+        if (negativePower) {
+          evaluate(); // Evaluates up to virtual opening bracket
+          negativePower = false;
+        }
+        evaluatePower();
       }
     } else if (element.matches(".op")) {
       element.classList.remove("op");
@@ -40,180 +47,127 @@ function getSolution() {
         const previousValue = valueStack.pop();
         valueStack.push(calculate(operator, previousValue));
       } else if (operator === "subtraction") {
-        // Convert subtraction to multiplication by -1 and addition
-        // if a number proceeds the minus operator. This allows for
-        // correct evaluation of multiple chained subtractions.
+        // Convert subtraction to easier to handle format (multiplication
+        // by -1 and, if necessary, addition)
         valueStack.push(-1);
         const previous = expression[i - 1];
         if (i >= 1 && previous.matches(".num, .closing-bracket")) {
           operatorStack.push("addition");
         } else if (i >= 1 && previous.matches(".power")) {
           // Add virtual opening bracket to ensure correct order of operations
-          // inside evaluatePart()
           operatorStack.push("opening-bracket");
+          negativePower = true;
         }
         operatorStack.push("multiplication");
       } else if (operator === "closing-bracket") {
-        evaluatePart();
+        evaluate(); // Runs until opening bracket is encountered
+        evaluatePower();
       } else {
         operatorStack.push(operator);
       }
     }
   }
-
-  while (valueStack.length > 1) {
-    evaluatePart();
-  }
-
+  evaluate();
   return valueStack[0];
 }
 
-function evaluatePart() {
-  let a;
-  let b;
-  let c;
-  let d;
-  let operator;
-  let nextOperator;
-  let nextNextOperator;
-  const lowOrderOps = ["addition"];
-  const midOrderOps = ["multiplication", "division"];
-  const singleArgumentOps = ["sqrt", "log", "ln"];
-
+function evaluate() {
   while (valueStack.length > 1 || operatorStack.length > 0) {
-    // console.log("VALUE STACK");
-    // console.log(valueStack);
-    // console.log("OPERATOR STACK");
-    // console.log(operatorStack);
+    // Break condition 1: opening bracket or end of operator stack
+    const operator = operatorStack.pop();
+    if (operator === "opening-bracket" || !operator) break;
 
-    operator = operatorStack.pop();
-    if (operator === "opening-bracket" || operator === undefined) {
-      break;
-    }
-
-    a = valueStack.pop();
-
-    if (singleArgumentOps.includes(operator)) {
+    // Break condition 2: single argument operation
+    const a = valueStack.pop();
+    if (["sqrt", "log", "ln"].includes(operator)) {
       valueStack.push(calculate(operator, a));
       break;
     }
 
-    b = valueStack.pop();
+    // Note: At this point, the only possible operators that are encountered
+    // will be: multiplication, division, addition, and opening bracket.
 
-    if (
-      (lowOrderOps.includes(operator) || midOrderOps.includes(operator)) &&
-      valueStack.length > 0
-    ) {
-      nextOperator = operatorStack.pop();
-      if (
-        !lowOrderOps.includes(nextOperator) &&
-        !midOrderOps.includes(nextOperator) &&
-        nextOperator !== "opening-bracket" &&
-        !singleArgumentOps.includes(nextOperator)
-      ) {
-        c = valueStack.pop();
-        valueStack.push(calculate(nextOperator, c, b));
-        valueStack.push(a);
-        operatorStack.push(operator);
-        continue;
-      }
-      if (operator === "division" && nextOperator === "division") {
-        // For chain division inputs, e.g. 5 / 5 / 5 / 5 / 5.
-        c = valueStack.pop();
-        let divisionStack = [a, b, c];
-        let divisionDepth = 2;
-        nextOperator = operatorStack.pop();
-        while (nextOperator === "division") {
-          divisionDepth++;
-          nextOperator = operatorStack.pop();
-        }
-        // Push back the last popped operator if it isn't undefined
-        // (i.e. end of stack was reached) or isn't 'division'.
-        if (nextOperator && nextOperator !== "division")
-          operatorStack.push(nextOperator);
-
-        for (let i = divisionDepth; i > 2; i--) {
-          divisionStack.push(valueStack.pop());
-        }
-
-        valueStack.push(divisionStack.pop());
-
-        for (let i = 0; i < divisionDepth; i++) {
-          a = valueStack.pop();
-          b = divisionStack.pop();
-          valueStack.push(calculate("division", a, b));
-        }
-        continue;
-      }
-      if (
-        midOrderOps.includes(nextOperator) &&
-        (lowOrderOps.includes(operator) || operator === "multiplication")
-      ) {
-        c = valueStack.pop();
-        if (valueStack.length > 0) {
-          nextNextOperator = operatorStack.pop();
-          if (
-            !lowOrderOps.includes(nextNextOperator) &&
-            !midOrderOps.includes(nextNextOperator) &&
-            valueStack.length > 0 &&
-            nextNextOperator !== "opening-bracket" &&
-            !singleArgumentOps.includes(nextNextOperator)
-          ) {
-            d = valueStack.pop();
-            valueStack.push(calculate(nextNextOperator, d, c));
-            valueStack.push(b);
-            valueStack.push(a);
-            operatorStack.push(nextOperator);
-            operatorStack.push(operator);
-            continue;
-          }
-          if (nextOperator === "division" && nextNextOperator === "division") {
-            d = valueStack.pop();
-            let divisionStack = [b, c, d];
-            let divisionDepth = 2;
-            nextNextOperator = operatorStack.pop();
-
-            while (nextNextOperator === "division") {
-              divisionDepth++;
-              nextNextOperator = operatorStack.pop();
-            }
-            // Push back the last popped operator if it isn't undefined
-            // (i.e. end of stack was reached) or isn't 'division'.
-            if (nextNextOperator && nextNextOperator !== "division")
-              operatorStack.push(nextNextOperator);
-
-            for (let i = divisionDepth; i > 2; i--) {
-              divisionStack.push(valueStack.pop());
-            }
-
-            valueStack.push(divisionStack.pop());
-
-            for (let i = 0; i < divisionDepth; i++) {
-              b = valueStack.pop();
-              c = divisionStack.pop();
-              valueStack.push(calculate("division", b, c));
-            }
-            valueStack.push(a);
-            operatorStack.push(operator);
-            continue;
-          }
-          operatorStack.push(nextNextOperator);
-        }
-        valueStack.push(calculate(nextOperator, c, b));
-        valueStack.push(a);
-        operatorStack.push(operator);
-        continue;
-      }
-      operatorStack.push(nextOperator);
+    const b = valueStack.pop();
+    if (valueStack.length < 1) {
+      valueStack.push(calculate(operator, b, a));
+      continue;
     }
+
+    const c = valueStack.pop();
+    const nextOperator = operatorStack.pop();
+    if (operator === "division" && nextOperator === "division") {
+      evaluateDivisionChain(a, b, c);
+      continue;
+    }
+    if (
+      operator === "division" ||
+      ["addition", "opening-bracket"].includes(nextOperator)
+    ) {
+      valueStack.push(c, calculate(operator, b, a));
+      operatorStack.push(nextOperator);
+      continue;
+    }
+
+    const nextNextOperator = operatorStack.pop();
+    if (nextOperator === "division" && nextNextOperator === "division") {
+      const d = valueStack.pop();
+      evaluateDivisionChain(b, c, d);
+    } else {
+      valueStack.push(calculate(nextOperator, c, b));
+      if (nextNextOperator) operatorStack.push(nextNextOperator);
+    }
+    valueStack.push(a);
+    operatorStack.push(operator);
+  }
+}
+
+function evaluatePower() {
+  const operator = operatorStack.pop();
+  if (operator === "power") {
+    const a = valueStack.pop();
+    const b = valueStack.pop();
     valueStack.push(calculate(operator, b, a));
+  } else if (operator) {
+    operatorStack.push(operator);
+  }
+}
+
+function evaluateDivisionChain(a, b, c) {
+  /* Handles chain division inputs, e.g. 5 / 5 / 5 / 5. */
+  let divisionStack = [a, b, c];
+  let divisionDepth = 2;
+  let operator = operatorStack.pop();
+  while (operator === "division") {
+    divisionDepth++;
+    operator = operatorStack.pop();
+  }
+
+  // Populate division stack in reverse order of value stack, based on number
+  // of division operators (i.e. divisionDepth)
+  for (let i = divisionDepth; i > 2; i--) {
+    divisionStack.push(valueStack.pop());
+  }
+
+  if (operator === "power") {
+    const powerValue = calculate(
+      "power",
+      valueStack.pop(),
+      divisionStack.pop()
+    );
+    divisionStack.push(powerValue);
+  } else if (operator && operator !== "division") {
+    operatorStack.push(operator);
+  }
+
+  valueStack.push(divisionStack.pop());
+  for (let i = 0; i < divisionDepth; i++) {
+    a = valueStack.pop();
+    b = divisionStack.pop();
+    valueStack.push(calculate("division", a, b));
   }
 }
 
 function calculate(operator, ...args) {
-  /* Take operator and necessary arguments for a mathematical
-   * operation and return the result.
-   */
   switch (operator) {
     case "factorial":
       return factorial(+args[0]);
@@ -228,10 +182,8 @@ function calculate(operator, ...args) {
     case "power":
       return Math.pow(+args[0], +args[1]);
     case "division":
-      // Return NaN when dividing by zero, which
-      // will result in an error
       if (+args[1] === 0) {
-        return NaN;
+        return NaN; // Will result in an error on the display
       } else {
         return +args[0] / +args[1];
       }
@@ -245,9 +197,6 @@ function calculate(operator, ...args) {
 }
 
 function factorial(n) {
-  /* Calculate the factorial of a number n, differentiating
-   * between non-decimal and decimal numbers.
-   */
   if (n % 1 === 0) {
     let value = 1;
     for (let i = 2; i <= n; i++) {
@@ -255,9 +204,9 @@ function factorial(n) {
     }
     return value;
   } else {
+    // Stirling's approximation of gamma function for factorial of decimal
+    // values. Source: https://en.wikipedia.org/wiki/Stirling%27s_approximation
     n += 1.0;
-    // Stirling's approximation of gamma function for factorial of decimal values
-    // https://en.wikipedia.org/wiki/Stirling%27s_approximation#Versions_suitable_for_calculators
     let gamma =
       Math.sqrt((2 * Math.PI) / n) *
       Math.pow((1 / Math.E) * (n + 1 / (12 * n - 1 / (10 * n))), n);
@@ -266,10 +215,9 @@ function factorial(n) {
 }
 
 function getActiveElement() {
-  /* Returns HTML element that is currently active for input.
-   * This will be the current display or a 'power' div, which
-   * is nested within current display or another 'power' div,
-   * and appears in superscript.
+  /* Returns HTML element that is currently active for input. This will be the
+   * current display or a 'power' div, which is nested within current display
+   * or another 'power' div.
    */
   const powerElements = currentDisplay.querySelectorAll(".power.active");
   if (powerElements.length !== 0) {
@@ -279,34 +227,22 @@ function getActiveElement() {
   }
 }
 
-function updateActiveElement(activeElement) {
-  /* Updates the active element when certain operator buttons
-   * are clicked, e.g. +. When there aren't any unclosed closing
-   * brackets in a 'power' div, the function checks the parent
-   * 'power' div for unclosed brackets, and returns that as the
-   * active element when there is at least one such bracket. If
-   * there isn't an unclosed closing bracket, it recursively
-   * checks the parent of the parent, etc., until it reaches the
-   * current display (and returns that as active element).
+function updateActiveElement(a) {
+  /* Updates the active element when certain operator buttons are clicked,
+   * e.g. +. When there aren't any unclosed closing brackets in a 'power' div,
+   * the function checks the parent 'power' div for unclosed brackets, and
+   * returns that as the active element when there is at least one such
+   * bracket. If there isn't an unclosed closing bracket, it recursively checks
+   * the parent of the parent, etc., until it reaches the current display (and
+   * returns that as active element).
    */
 
-  // Base case 1: Active element is current display
-  if (activeElement === currentDisplay) return currentDisplay;
+  if (a === currentDisplay) return currentDisplay;
+  if (a.contains(document.querySelector(".unclosed"))) return a;
 
-  // Base case 2: Active element contains unclosed closing bracket
-  if (
-    activeElement.contains(
-      document.querySelector(".closing-bracket.anticipating")
-    )
-  ) {
-    return activeElement;
-  }
-
-  // Deactivate current active element, get next active element
-  // (i.e. the parent), then recursively call this function on it.
-  activeElement.classList.remove("active");
-  activeElement = getActiveElement();
-  return updateActiveElement(activeElement);
+  a.classList.remove("active");
+  a = getActiveElement();
+  return updateActiveElement(a);
 }
 
 function deactivateAllPowerElements() {
@@ -322,7 +258,7 @@ function createInputSquare() {
   square.innerHTML = "&#9633;";
 
   const a = getActiveElement();
-  a.insertBefore(square, a.querySelector(".closing-bracket.anticipating"));
+  a.insertBefore(square, a.querySelector(".unclosed"));
 }
 
 function removeInputSquare() {
@@ -331,7 +267,7 @@ function removeInputSquare() {
   a.removeChild(square);
 }
 
-function addNumberToCurrentDisplay(buttonId) {
+function addNumber(buttonId) {
   const activeElement = getActiveElement();
   const number = document.createElement("div");
   number.classList.add("num");
@@ -356,13 +292,10 @@ function addNumberToCurrentDisplay(buttonId) {
       number.innerHTML += `${buttonId}`;
   }
 
-  activeElement.insertBefore(
-    number,
-    activeElement.querySelector(".closing-bracket.anticipating")
-  );
+  activeElement.insertBefore(number, activeElement.querySelector(".unclosed"));
 }
 
-function addOperatorToCurrentDisplay(buttonId) {
+function addOperator(buttonId) {
   let activeElement = getActiveElement();
   const operator = document.createElement("div");
   operator.classList.add("op");
@@ -382,29 +315,27 @@ function addOperatorToCurrentDisplay(buttonId) {
     case "sqrt":
       operator.innerHTML = "&Sqrt;(";
       bracketDepth++;
-      addNewAnticipatingClosingBracket();
+      addUnclosedClosingBracket();
       break;
     case "log":
       operator.innerHTML = "log(";
       bracketDepth++;
-      addNewAnticipatingClosingBracket();
+      addUnclosedClosingBracket();
       break;
     case "ln":
       operator.innerHTML = "ln(";
       bracketDepth++;
-      addNewAnticipatingClosingBracket();
+      addUnclosedClosingBracket();
       break;
     case "opening-bracket":
       operator.innerHTML = "(";
       bracketDepth++;
-      addNewAnticipatingClosingBracket();
+      addUnclosedClosingBracket();
       break;
     case "closing-bracket":
       activeElement = updateActiveElement(activeElement);
-      const firstClosingBracket = document.querySelector(
-        ".closing-bracket.anticipating"
-      );
-      firstClosingBracket.classList.remove("anticipating");
+      const firstClosingBracket = document.querySelector(".unclosed");
+      firstClosingBracket.classList.remove("unclosed");
       bracketDepth--;
       return;
     case "division":
@@ -421,9 +352,8 @@ function addOperatorToCurrentDisplay(buttonId) {
       break;
     case "subtraction":
       operator.innerHTML = " - ";
-      // Active element doesn't get updated when it is empty.
-      // This allows for powers of negative numbers to be calculated
-      // without using brackets.
+      // Condition allows for powers of negative numbers to be calculated
+      // without having to use brackets.
       if (activeElement.children.length > 0) {
         activeElement = updateActiveElement(activeElement);
       }
@@ -431,6 +361,7 @@ function addOperatorToCurrentDisplay(buttonId) {
     case "equals":
       deactivateAllPowerElements();
       let solution = getSolution();
+      // Quick fix for floating point imprecision
       solution = parseFloat(Number(solution).toFixed(10));
 
       operator.innerHTML = ` = `;
@@ -462,22 +393,19 @@ function addOperatorToCurrentDisplay(buttonId) {
 
   activeElement.insertBefore(
     operator,
-    activeElement.querySelector(".closing-bracket.anticipating")
+    activeElement.querySelector(".unclosed")
   );
 }
 
-function addNewAnticipatingClosingBracket() {
-  const activeElement = getActiveElement();
+function addUnclosedClosingBracket() {
+  const bracket = document.createElement("div");
+  bracket.classList.add("op");
+  bracket.classList.add("closing-bracket");
+  bracket.classList.add("unclosed");
+  bracket.innerHTML = ")";
 
-  const newClosingBracket = document.createElement("div");
-  newClosingBracket.classList.add("op");
-  newClosingBracket.classList.add("closing-bracket");
-  newClosingBracket.classList.add("anticipating");
-  newClosingBracket.innerHTML = ")";
-  activeElement.insertBefore(
-    newClosingBracket,
-    activeElement.querySelector(".closing-bracket.anticipating")
-  );
+  const a = getActiveElement();
+  a.insertBefore(bracket, a.querySelector(".unclosed"));
 }
 
 function disableNumButtons(setting, subset = "all") {
@@ -545,9 +473,7 @@ function disableOpButtons(setting, subset = "all") {
 }
 
 function setButtons() {
-  /* Activate and deactivate buttons based on the last entry
-   * on the display.
-   */
+  /* Activate and deactivate buttons based on the last entry on the display. */
   const activeElement = getActiveElement();
 
   if (activeElement.children.length === 0) {
@@ -560,9 +486,8 @@ function setButtons() {
   const length = activeElement.children.length;
   for (let i = 0; i < length; i++) {
     let next = activeElement.children[i + 1];
-    // Set 'last' to last child in children or last child before
-    // non-closed closing bracket
-    if (i === length - 1 || next.matches(".anticipating")) {
+    if (i === length - 1 || next.matches(".unclosed")) {
+      // Last child or last before unclosed closing bracket
       last = activeElement.children[i];
       break;
     }
@@ -616,7 +541,7 @@ function clear() {
   let indexToRemove;
   for (let i = 0; i < length; i++) {
     const next = activeElement.children[i + 1];
-    if (i === length - 1 || next.matches(".anticipating")) {
+    if (i === length - 1 || next.matches(".unclosed")) {
       indexToRemove = i;
       break;
     }
@@ -630,7 +555,7 @@ function clear() {
       activeElement.removeChild(removee);
     }
   } else if (removee.matches(".closing-bracket")) {
-    removee.classList.add("anticipating");
+    removee.classList.add("unclosed");
     bracketDepth++;
   } else if (removee.matches(".opening-bracket, .sqrt, .log, .ln")) {
     // Remove the removee div and then the closing bracket that takes
@@ -647,12 +572,12 @@ function updatePrevious() {
   /* Update display of previous operation */
   const length = previousDisplay.children.length;
   if (previousDisplay.children[length - 1].matches(".equals")) {
-    // Clear previousDisplay when the previous calculation didn't
-    // have an answer, i.e. when an error was thrown
+    // Clear previousDisplay when the previous calculation didn't have an 
+    // answer, i.e. when an error was thrown.
     previousDisplay.innerHTML = "";
   } else if (length > 3 || !previousDisplay.children[0].matches(".answer")) {
-    // Replace the full previous operation by "Ans", i.e.
-    // '5 + 1 = 6' becomes 'Ans = 6'.
+    // Replace the full previous operation by "Ans", i.e. '5 + 1 = 6' becomes 
+    // 'Ans = 6'.
     while (!previousDisplay.children[0].matches(".equals")) {
       previousDisplay.removeChild(previousDisplay.children[0]);
     }
@@ -665,7 +590,6 @@ function updatePrevious() {
 }
 
 function hasTouch() {
-  /* Detect touch screen */
   return (
     "ontouchstart" in document.documentElement ||
     navigator.maxTouchPoints > 0 ||
@@ -675,7 +599,6 @@ function hasTouch() {
 
 function setViewportHeightUnit() {
   let vh = window.innerHeight * 0.01;
-  // Set vh in --vh custom property to the root of the document
   document.documentElement.style.setProperty("--vh", `${vh}px`);
 }
 
@@ -739,7 +662,7 @@ numberButtons.forEach((numberButton) => {
   numberButton.addEventListener("click", () => {
     const id = numberButton.getAttribute("id");
     removeInputSquare();
-    addNumberToCurrentDisplay(id);
+    addNumber(id);
     setButtons();
     createInputSquare();
     clearButton.textContent = "CE";
@@ -752,7 +675,7 @@ operatorButtons.forEach((operatorButton) => {
   operatorButton.addEventListener("click", () => {
     const id = operatorButton.getAttribute("id");
     removeInputSquare();
-    addOperatorToCurrentDisplay(id);
+    addOperator(id);
     setButtons();
     createInputSquare();
     clearButton.textContent = id === "equals" ? "AC" : "CE";
@@ -774,6 +697,7 @@ clearButton.addEventListener("click", () => {
 });
 
 window.addEventListener("keydown", function (e) {
+  console.log(e.key);
   const button = keyMap[e.key];
   if (button) document.getElementById(button).click();
 });
