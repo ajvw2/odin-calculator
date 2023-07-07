@@ -703,5 +703,8 @@ window.addEventListener("keydown", function (e) {
     button = keyMap[e.key];
   }
 
-  if (button) document.getElementById(button).click();
+  if (button) {
+    document.getElementById(button).click();
+    e.preventDefault();
+  }
 });
