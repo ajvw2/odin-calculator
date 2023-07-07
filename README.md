@@ -1,4 +1,4 @@
-# Sketcher
+# Calculator
 
 ![calculator-demo](./images/calculator-demo.gif)
 
